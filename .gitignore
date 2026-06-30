@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+.env/
+.env
+
+# VS Code
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Database (if generated locally)
+*.db
+*.sqlite3
+
+# Build
+dist/
+build/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Generated content
+projects/
+videos/
+exports/

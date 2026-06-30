@@ -37,7 +37,7 @@ class AppPaths:
 
     @property
     def database_file(self) -> Path:
-        return self.base_path / "database.db"
+        return self.data_dir / "database.db"
 
     def ensure_directories(self) -> None:
         """Create required application directories if they are missing."""

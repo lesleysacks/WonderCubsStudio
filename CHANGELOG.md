@@ -1,5 +1,16 @@
 # Changelog
 
+## Version 0.2
+
+### Added
+
+* Dashboard
+* Sidebar Navigation
+* Statistics Cards
+* Latest Project Panel
+* Today's Goal Panel
+* Dashboard Service
+
 ## v0.1.0 - Initial Release
 
 ### Added

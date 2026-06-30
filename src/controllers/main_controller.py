@@ -1,9 +1,12 @@
 """Main application controller."""
 from __future__ import annotations
 
+from src.database.dashboard_repository import DashboardRepository
 from src.database.project_repository import ProjectRepository
+from src.models.dashboard import DashboardData
 from src.models.project import Project
 from src.models.settings import AppSettings
+from src.services.dashboard_service import DashboardService
 from src.services.explorer_service import ExplorerService
 from src.services.project_service import ProjectService
 from src.services.settings_service import SettingsService
@@ -18,7 +21,9 @@ class MainController:
         self._logger = get_logger(__name__)
         self._settings_service = settings_service
         repository = ProjectRepository(paths.database_file)
+        dashboard_repository = DashboardRepository(paths.database_file)
         self._project_service = ProjectService(repository, paths.projects_dir)
+        self._dashboard_service = DashboardService(dashboard_repository)
         self._explorer_service = ExplorerService()
 
     def create_project(self, video_number: str, title: str, lesson: str) -> Project:
@@ -34,6 +39,10 @@ class MainController:
         """Open a project folder in Windows Explorer."""
         self._logger.info("Opening project folder: %s", project.folder_path)
         self._explorer_service.open_folder(project.folder_path)
+
+    def load_dashboard(self) -> DashboardData:
+        """Return dashboard data for the home screen."""
+        return self._dashboard_service.get_dashboard_data()
 
     def load_settings(self) -> AppSettings:
         """Load application settings."""

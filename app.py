@@ -21,7 +21,7 @@ def main() -> int:
         paths.ensure_directories()
         configure_logging(paths.logs_dir / "app.log")
         logger = get_logger(__name__)
-        logger.info("Starting WonderCubs Studio v0.1")
+        logger.info("Starting WonderCubs Studio v0.2")
 
         settings_service = SettingsService(paths.config_file, paths.projects_dir)
         settings_service.ensure_config()

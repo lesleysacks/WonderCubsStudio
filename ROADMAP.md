@@ -2,10 +2,10 @@
 
 ## Version 0.2
 
-* Dashboard
+* Dashboard - Completed
 * Character Manager
 * Prompt Library
-* Better UI
+* Better UI - In Progress
 
 ## Version 0.3
 

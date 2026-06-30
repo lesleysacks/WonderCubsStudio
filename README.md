@@ -1,14 +1,19 @@
 # WonderCubs Studio
 
-WonderCubs Studio v0.1 is a desktop application for managing an AI-assisted YouTube production pipeline for a preschool educational channel.
+WonderCubs Studio v0.2 is a desktop application for managing an AI-assisted YouTube production pipeline for a preschool educational channel.
 
 ## Project Overview
 
-The app helps organize every video into a consistent production folder structure, stores project metadata in SQLite, and provides simple screens for creating projects, opening project folders, viewing the video queue, and editing core settings.
+The app helps organize every video into a consistent production folder structure, stores project metadata in SQLite, and provides a dashboard for monitoring project progress, today's production goal, and the latest created project.
 
 ## Features
 
-- Home screen for the main production workflow
+- Modern dark dashboard home screen
+- Permanent sidebar navigation
+- Dashboard statistics cards
+- Today's goal panel backed by SQLite
+- Latest project panel
+- Project summary panel
 - New project creation with video title, lesson, and video number
 - Automatic project folder generation
 - Placeholder production files for story, voice, prompts, thumbnail, SEO, notes, and README content
@@ -18,6 +23,10 @@ The app helps organize every video into a consistent production folder structure
 - JSON-backed settings screen
 - Application logging to `logs/app.log`
 - Modular Python architecture
+
+## Version 0.2
+
+Version 0.2 adds the Dashboard feature. The dashboard is now the application's home screen and displays live project statistics, today's goal, latest project details, quick actions, and sidebar navigation. Future navigation targets that are not implemented yet display `Coming Soon` rather than fake functionality.
 
 ## Installation
 
@@ -58,30 +67,31 @@ The app helps organize every video into a consistent production folder structure
 
 ```text
 WonderCubsStudio/
-├── app.py
-├── requirements.txt
-├── README.md
-├── config.json
-├── database.db
-├── assets/
-├── data/
-├── logs/
-├── projects/
-├── templates/
-├── src/
-│   ├── ui/
-│   ├── database/
-│   ├── models/
-│   ├── services/
-│   ├── utils/
-│   └── controllers/
-└── tests/
+|-- app.py
+|-- requirements.txt
+|-- README.md
+|-- config.json
+|-- assets/
+|-- data/
+|   `-- database.db
+|-- logs/
+|-- projects/
+|-- templates/
+|-- src/
+|   |-- ui/
+|   |-- database/
+|   |-- models/
+|   |-- services/
+|   |-- utils/
+|   `-- controllers/
+`-- tests/
 ```
 
 ## Future Roadmap
 
 ### Version 0.2
 
+- Dashboard: Completed
 - Character Manager
 - Prompt Library
 
@@ -99,4 +109,4 @@ WonderCubsStudio/
 
 ## License
 
-This project is provided as an internal production tool. Add a formal license before public distribution.
+This project is provided under the MIT License.

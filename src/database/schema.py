@@ -31,6 +31,34 @@ CREATE_GOALS_DATE_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_goals_goal_date ON Goals (goal_date);
 """
 
+CREATE_CHARACTERS_TABLE = """
+CREATE TABLE IF NOT EXISTS Characters (
+    uuid TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    species TEXT NOT NULL,
+    gender TEXT NOT NULL,
+    age_group TEXT NOT NULL,
+    fur_color TEXT NOT NULL,
+    mane_color TEXT NOT NULL,
+    eye_color TEXT NOT NULL,
+    shirt TEXT NOT NULL,
+    pants TEXT NOT NULL,
+    shoes TEXT NOT NULL,
+    accessories TEXT NOT NULL,
+    personality TEXT NOT NULL,
+    voice_style TEXT NOT NULL,
+    catchphrase TEXT NOT NULL,
+    description TEXT NOT NULL,
+    image_folder TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_CHARACTERS_NAME_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_characters_name ON Characters (name);
+"""
+
 
 def initialize_database(database_file: Path) -> None:
     """Create the application database and required tables."""
@@ -39,4 +67,6 @@ def initialize_database(database_file: Path) -> None:
         connection.execute(CREATE_PROJECTS_TABLE)
         connection.execute(CREATE_GOALS_TABLE)
         connection.execute(CREATE_GOALS_DATE_INDEX)
+        connection.execute(CREATE_CHARACTERS_TABLE)
+        connection.execute(CREATE_CHARACTERS_NAME_INDEX)
         connection.commit()

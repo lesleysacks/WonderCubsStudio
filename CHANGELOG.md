@@ -11,6 +11,44 @@
 * Today's Goal Panel
 * Dashboard Service
 
+### Version 0.3
+
+# Changelog
+
+## v0.3.0 (In Development)
+
+### Sprint 3.1 - Character Database Foundation
+
+#### Added
+
+- Character domain model
+- Character repository
+- Character database schema
+- Character database index
+- Character repository unit tests
+
+#### Database
+
+- Added `Characters` table
+- Added `idx_characters_name` index
+- Existing tables remain unchanged
+
+#### Testing
+
+- Added repository unit tests
+- All tests passing (6/6)
+
+#### Documentation
+
+- Updated Character Intelligence architecture
+- Updated Database architecture documentation
+
+---
+
+
+
+
+
 ## v0.1.0 - Initial Release
 
 ### Added

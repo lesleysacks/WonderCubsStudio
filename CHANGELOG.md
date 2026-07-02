@@ -17,6 +17,29 @@
 
 ## v0.3.0 (In Development)
 
+### Sprint 3.3 - Character Workspace UI
+
+#### Added
+
+- Character Workspace UI
+- Character controller
+- Character toolbar component
+- Character list panel with live search
+- Character details panel
+- Character preview panel with image placeholders
+- UI action smoke tests
+
+#### Architecture
+
+- Character Workspace follows UI -> Controller -> Service -> Repository -> SQLite
+- UI uses CharacterService through CharacterController only
+- No Dashboard code or repository access added to UI components
+
+#### Documentation
+
+- Added Character Workspace architecture documentation
+- Updated README and roadmap
+
 ### Sprint 3.2 - Character Intelligence Service
 
 #### Added

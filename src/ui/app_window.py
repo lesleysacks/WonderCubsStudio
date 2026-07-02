@@ -10,6 +10,7 @@ from src.controllers.main_controller import MainController
 from src.models.dashboard import DashboardData, ProjectStatistics
 from src.models.project import Project
 from src.models.settings import AppSettings
+from src.ui.character.character_window import CharacterWindow
 from src.utils.logger import get_logger
 
 
@@ -24,7 +25,7 @@ class WonderCubsApp(ctk.CTk):
         self._logger = get_logger(__name__)
         self._content_frame: ctk.CTkFrame | None = None
         self._nav_buttons: dict[str, ctk.CTkButton] = {}
-        self.title("WonderCubs Studio v0.2")
+        self.title("WonderCubs Studio v0.3")
         self.geometry("1120x720")
         self.minsize(940, 620)
         ctk.set_appearance_mode("dark")
@@ -51,7 +52,7 @@ class WonderCubsApp(ctk.CTk):
         nav_items: tuple[tuple[str, Callable[[], None]], ...] = (
             ("Dashboard", self._show_dashboard),
             ("Projects", self._open_project_picker),
-            ("Characters", lambda: self._show_coming_soon("Characters")),
+            ("Characters", self._show_characters),
             ("Prompt Library", lambda: self._show_coming_soon("Prompt Library")),
             ("Analytics", lambda: self._show_coming_soon("Analytics")),
             ("Settings", self._open_settings),
@@ -222,6 +223,12 @@ class WonderCubsApp(ctk.CTk):
         ctk.CTkLabel(frame, text=title, font=("Segoe UI", 28, "bold")).pack(padx=70, pady=(42, 8))
         ctk.CTkLabel(frame, text="Coming Soon", font=("Segoe UI", 18), text_color="#94a3b8").pack(padx=70, pady=(0, 42))
         messagebox.showinfo(title, "Coming Soon")
+
+    def _show_characters(self) -> None:
+        self._set_active_nav("Characters")
+        content = self._clear_content()
+        workspace = CharacterWindow(content, self._controller.get_character_controller())
+        workspace.grid(row=0, column=0, sticky="nsew")
 
     def _open_new_project_dialog(self) -> None:
         NewProjectDialog(self, self._controller, on_project_created=self._show_dashboard)

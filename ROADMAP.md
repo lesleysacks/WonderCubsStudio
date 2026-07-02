@@ -31,11 +31,11 @@
 - JSON export
 - Prompt generation
 
-### Sprint 3.3 - Next
+### Sprint 3.3 - Complete
 
 - Character Manager UI
 
-### Sprint 3.4
+### Sprint 3.4 - Next
 
 - Image Manager
 

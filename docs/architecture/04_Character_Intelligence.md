@@ -23,6 +23,17 @@ Sprint 3.2 adds the backend business logic layer:
 
 No UI, dashboard navigation, or controller is implemented in Sprint 3.2.
 
+Sprint 3.3 adds the Character Workspace UI:
+
+- `CharacterController`
+- Character Workspace frame
+- Toolbar, list, details, and preview panels
+- Live search
+- Save, cancel, duplicate, delete, and export actions
+- Image placeholders for `Front.png`, `Side.png`, `Back.png`, and `Portrait.png`
+
+The UI depends on `CharacterController` and never calls `CharacterRepository` directly.
+
 ## Data Model
 
 The `Character` model contains:

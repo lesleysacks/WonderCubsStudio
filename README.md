@@ -1,6 +1,6 @@
 # WonderCubs Studio
 
-WonderCubs Studio v0.2 is a desktop application for managing an AI-assisted YouTube production pipeline for a preschool educational channel.
+WonderCubs Studio v0.3 is a desktop application for managing an AI-assisted YouTube production pipeline for a preschool educational channel.
 
 ## Project Overview
 
@@ -21,12 +21,19 @@ The app helps organize every video into a consistent production folder structure
 - Open existing project folders in Windows Explorer
 - Video queue table
 - JSON-backed settings screen
+- Character Workspace with modular list, details, preview, and toolbar panels
+- Character validation through the CharacterService layer
+- Character duplicate, delete, search, and JSON export actions
 - Application logging to `logs/app.log`
 - Modular Python architecture
 
 ## Version 0.2
 
 Version 0.2 adds the Dashboard feature. The dashboard is now the application's home screen and displays live project statistics, today's goal, latest project details, quick actions, and sidebar navigation. Future navigation targets that are not implemented yet display `Coming Soon` rather than fake functionality.
+
+## Version 0.3
+
+Version 0.3 adds the Character Intelligence foundation. Sprint 3.3 introduces the Character Workspace UI using reusable CustomTkinter components connected through `CharacterController` and `CharacterService`.
 
 ## Installation
 
@@ -97,8 +104,9 @@ WonderCubsStudio/
 
 ### Version 0.3
 
+- Character Workspace
 - Voice Manager
-- Image Generator
+- Image Manager
 - Analytics Dashboard
 
 ### Version 1.0

@@ -2,14 +2,26 @@
 
 The Character Intelligence System provides reusable character records for future story, image, voice, thumbnail, and animation workflows.
 
-Sprint 3.1 implements the backend foundation only:
+Sprint 3.1 implemented the backend persistence foundation:
 
 - `Character` dataclass model
 - `Characters` SQLite table
 - `CharacterRepository` CRUD/search/existence methods
 - Unit tests for persistence behavior
 
-No UI, dashboard navigation, prompt builder, controller, or service layer is implemented in this sprint.
+Sprint 3.2 adds the backend business logic layer:
+
+- `CharacterService`
+- Required-field validation
+- Duplicate name validation
+- Description length validation
+- UUID immutability checks
+- Image folder validation
+- Structured JSON export
+- Reusable prompt generation
+- Unit tests for service behavior
+
+No UI, dashboard navigation, or controller is implemented in Sprint 3.2.
 
 ## Data Model
 
@@ -50,6 +62,45 @@ Methods:
 - `exists()`
 
 All repository methods use parameterized SQL queries, log failures, and re-raise SQLite exceptions for the caller to handle.
+
+## Service
+
+`CharacterService` owns business rules for character workflows.
+
+Methods:
+
+- `create_character()`
+- `update_character()`
+- `delete_character()`
+- `get_character()`
+- `get_all_characters()`
+- `search_characters()`
+- `character_exists()`
+- `export_json()`
+- `build_prompt()`
+
+The service raises meaningful exceptions instead of printing errors:
+
+- `CharacterValidationError`
+- `CharacterNotFoundError`
+
+The service logs character creation, updates, deletion, validation failures, and JSON export.
+
+## JSON Export
+
+`export_json()` returns a JSON-ready object and does not write files.
+
+Top-level sections:
+
+- identity
+- appearance
+- personality
+- voice
+- images
+
+## Prompt Builder
+
+`build_prompt()` returns a reusable character description for future Story, Image, Thumbnail, Voice, and Animation agents.
 
 ## Planned Architecture
 

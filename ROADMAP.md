@@ -23,7 +23,7 @@
 - Database schema
 - Repository tests
 
-### Sprint 3.2 🚧 Next
+### Sprint 3.2 - Complete
 
 - Character service
 - Validation
@@ -31,7 +31,7 @@
 - JSON export
 - Prompt generation
 
-### Sprint 3.3
+### Sprint 3.3 - Next
 
 - Character Manager UI
 

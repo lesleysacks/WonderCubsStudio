@@ -96,6 +96,12 @@ Responsible for
 
 Never communicates directly with the UI.
 
+Sprint 3.2 implements this layer in `src/services/character_service.py`.
+
+The service validates required identity fields, duplicate names, maximum description length, UUID immutability, and image folder paths before saving.
+
+The service raises exceptions for validation and missing records rather than printing errors.
+
 ---
 
 ## Character Repository
@@ -222,16 +228,13 @@ Large Expressive Eyes
 
 # JSON Export
 
-Every character exports as
+Every character exports as a structured JSON-ready object with these top-level sections:
 
-{
-"name":"",
-"species":"",
-"appearance":{},
-"personality":{},
-"voice":{},
-"images":{}
-}
+- identity
+- appearance
+- personality
+- voice
+- images
 
 Future AI Agents will consume this JSON.
 

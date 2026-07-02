@@ -17,6 +17,30 @@
 
 ## v0.3.0 (In Development)
 
+### Sprint 3.2 - Character Intelligence Service
+
+#### Added
+
+- Character service business logic layer
+- Character validation rules
+- Duplicate character name checks
+- Structured character JSON export
+- Reusable character prompt builder
+- Character service unit tests
+
+#### Logging
+
+- Added service logs for character creation, updates, deletion, validation failures, and JSON export
+
+#### Testing
+
+- Added service unit tests for valid characters, missing required fields, duplicate names, long descriptions, JSON export, and prompt building
+
+#### Documentation
+
+- Updated Character Intelligence documentation
+- Updated roadmap status for Sprint 3.2
+
 ### Sprint 3.1 - Character Database Foundation
 
 #### Added

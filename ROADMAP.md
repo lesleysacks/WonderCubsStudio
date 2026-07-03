@@ -35,13 +35,17 @@
 
 - Character Manager UI
 
-### Sprint 3.4 - Next
+### Sprint 3.4 - Complete
 
-- Image Manager
+- Workspace Context Engine
+- Active production project context
+- Context export for future agents
 
-### Sprint 3.5
+### Sprint 3.5 - Next
 
-- Prompt Builder
+- Story Agent context consumption
+- Agent input contracts
+- Workspace-aware prompt builder
 
 ### Sprint 3.6
 

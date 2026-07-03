@@ -1,11 +1,11 @@
-Current Sprint: 3.3
+Current Sprint: 3.4
 
 Current Version: v0.3.0
 
-Tests: 20
+Tests: 39
 
-Features Completed: 2/7
+Features Completed: 3/7
 
-Open Issues: 5
+Open Issues: 4
 
-Closed Issues: 4
+Closed Issues: 5

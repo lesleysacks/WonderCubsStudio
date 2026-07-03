@@ -24,6 +24,8 @@ The app helps organize every video into a consistent production folder structure
 - Character Workspace with modular list, details, preview, and toolbar panels
 - Character validation through the CharacterService layer
 - Character duplicate, delete, search, and JSON export actions
+- Workspace Context Engine for the active production project
+- Workspace context validation, switching, persistence, and JSON export
 - Application logging to `logs/app.log`
 - Modular Python architecture
 
@@ -34,6 +36,8 @@ Version 0.2 adds the Dashboard feature. The dashboard is now the application's h
 ## Version 0.3
 
 Version 0.3 adds the Character Intelligence foundation. Sprint 3.3 introduces the Character Workspace UI using reusable CustomTkinter components connected through `CharacterController` and `CharacterService`.
+
+Sprint 3.4 adds the Workspace Context Engine. The active production project context now flows through `WorkspaceController`, `WorkspaceService`, and `WorkspaceRepository`, with structured JSON export ready for future Story, Voice, Image, Thumbnail, and SEO agents.
 
 ## Installation
 
@@ -105,6 +109,7 @@ WonderCubsStudio/
 ### Version 0.3
 
 - Character Workspace
+- Workspace Context Engine
 - Voice Manager
 - Image Manager
 - Analytics Dashboard

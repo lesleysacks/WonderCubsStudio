@@ -4,7 +4,9 @@ from __future__ import annotations
 from src.database.dashboard_repository import DashboardRepository
 from src.database.character_repository import CharacterRepository
 from src.database.project_repository import ProjectRepository
+from src.database.workspace_repository import WorkspaceRepository
 from src.controllers.character_controller import CharacterController
+from src.controllers.workspace_controller import WorkspaceController
 from src.models.dashboard import DashboardData
 from src.models.project import Project
 from src.models.settings import AppSettings
@@ -13,6 +15,7 @@ from src.services.dashboard_service import DashboardService
 from src.services.explorer_service import ExplorerService
 from src.services.project_service import ProjectService
 from src.services.settings_service import SettingsService
+from src.services.workspace_service import WorkspaceService
 from src.utils.app_paths import AppPaths
 from src.utils.logger import get_logger
 
@@ -26,10 +29,13 @@ class MainController:
         repository = ProjectRepository(paths.database_file)
         dashboard_repository = DashboardRepository(paths.database_file)
         character_repository = CharacterRepository(paths.database_file)
+        workspace_repository = WorkspaceRepository(paths.database_file)
         self._project_service = ProjectService(repository, paths.projects_dir)
         self._dashboard_service = DashboardService(dashboard_repository)
         self._character_service = CharacterService(character_repository)
+        self._workspace_service = WorkspaceService(workspace_repository)
         self._character_controller = CharacterController(self._character_service)
+        self._workspace_controller = WorkspaceController(self._workspace_service)
         self._explorer_service = ExplorerService()
 
     def create_project(self, video_number: str, title: str, lesson: str) -> Project:
@@ -62,3 +68,7 @@ class MainController:
     def get_character_controller(self) -> CharacterController:
         """Return the Character Workspace controller."""
         return self._character_controller
+
+    def get_workspace_controller(self) -> WorkspaceController:
+        """Return the Workspace Context controller."""
+        return self._workspace_controller

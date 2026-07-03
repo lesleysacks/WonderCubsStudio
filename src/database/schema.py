@@ -59,6 +59,29 @@ CREATE_CHARACTERS_NAME_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_characters_name ON Characters (name);
 """
 
+CREATE_WORKSPACES_TABLE = """
+CREATE TABLE IF NOT EXISTS Workspaces (
+    uuid TEXT PRIMARY KEY,
+    project_name TEXT NOT NULL,
+    lesson TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    language TEXT NOT NULL,
+    target_platform TEXT NOT NULL,
+    resolution TEXT NOT NULL,
+    aspect_ratio TEXT NOT NULL,
+    duration INTEGER NOT NULL,
+    style TEXT NOT NULL,
+    current_scene TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
+CREATE_WORKSPACES_PROJECT_NAME_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_workspaces_project_name ON Workspaces (project_name);
+"""
+
 
 def initialize_database(database_file: Path) -> None:
     """Create the application database and required tables."""
@@ -69,4 +92,6 @@ def initialize_database(database_file: Path) -> None:
         connection.execute(CREATE_GOALS_DATE_INDEX)
         connection.execute(CREATE_CHARACTERS_TABLE)
         connection.execute(CREATE_CHARACTERS_NAME_INDEX)
+        connection.execute(CREATE_WORKSPACES_TABLE)
+        connection.execute(CREATE_WORKSPACES_PROJECT_NAME_INDEX)
         connection.commit()

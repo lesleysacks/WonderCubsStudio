@@ -17,6 +17,29 @@
 
 ## v0.3.0 (In Development)
 
+### Sprint 3.4 - Workspace Context Engine
+
+#### Added
+
+- Workspace model for active production project context
+- Workspace repository backed by SQLite
+- Workspace service with CRUD, validation, switching, and structured context export
+- Workspace controller for UI action coordination
+- Modular Workspace Context UI
+- Workspace Context Engine tests
+
+#### Architecture
+
+- Workspace Context follows UI -> Controller -> Service -> Repository -> SQLite
+- Workspace UI communicates only with `WorkspaceController`
+- Exported workspace context is JSON-ready for future Story, Voice, Image, Thumbnail, and SEO agents
+- No AI provider integration was added
+
+#### Testing
+
+- Added repository, service, and controller tests for Workspace CRUD, validation, export, and switching
+- 39 tests passing
+
 ### Sprint 3.3 - Character Workspace UI
 
 #### Added

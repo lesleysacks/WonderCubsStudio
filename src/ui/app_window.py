@@ -11,6 +11,7 @@ from src.models.dashboard import DashboardData, ProjectStatistics
 from src.models.project import Project
 from src.models.settings import AppSettings
 from src.ui.character.character_window import CharacterWindow
+from src.ui.workspace.workspace_window import WorkspaceWindow
 from src.utils.logger import get_logger
 
 
@@ -51,6 +52,7 @@ class WonderCubsApp(ctk.CTk):
 
         nav_items: tuple[tuple[str, Callable[[], None]], ...] = (
             ("Dashboard", self._show_dashboard),
+            ("Workspace", self._show_workspace),
             ("Projects", self._open_project_picker),
             ("Characters", self._show_characters),
             ("Prompt Library", lambda: self._show_coming_soon("Prompt Library")),
@@ -181,7 +183,8 @@ class WonderCubsApp(ctk.CTk):
         actions: tuple[tuple[str, Callable[[], None]], ...] = (
             ("New Project", self._open_new_project_dialog),
             ("Continue Project", self._open_project_picker),
-            ("Character Manager", lambda: self._show_coming_soon("Character Manager")),
+            ("Workspace Context", self._show_workspace),
+            ("Character Manager", self._show_characters),
             ("Prompt Library", lambda: self._show_coming_soon("Prompt Library")),
             ("Analytics", lambda: self._show_coming_soon("Analytics")),
             ("Settings", self._open_settings),
@@ -228,6 +231,12 @@ class WonderCubsApp(ctk.CTk):
         self._set_active_nav("Characters")
         content = self._clear_content()
         workspace = CharacterWindow(content, self._controller.get_character_controller())
+        workspace.grid(row=0, column=0, sticky="nsew")
+
+    def _show_workspace(self) -> None:
+        self._set_active_nav("Workspace")
+        content = self._clear_content()
+        workspace = WorkspaceWindow(content, self._controller.get_workspace_controller())
         workspace.grid(row=0, column=0, sticky="nsew")
 
     def _open_new_project_dialog(self) -> None:

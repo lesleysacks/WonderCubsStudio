@@ -82,6 +82,31 @@ CREATE_WORKSPACES_PROJECT_NAME_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_workspaces_project_name ON Workspaces (project_name);
 """
 
+CREATE_PROMPTS_TABLE = """
+CREATE TABLE IF NOT EXISTS Prompts (
+    id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    template TEXT NOT NULL,
+    variables TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+    PRIMARY KEY (id, version)
+);
+"""
+
+CREATE_PROMPTS_NAME_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_prompts_name ON Prompts (name COLLATE NOCASE);
+"""
+
+CREATE_PROMPTS_ACTIVE_VERSION_INDEX = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prompts_one_active_version
+ON Prompts (id) WHERE active = 1;
+"""
+
 
 def initialize_database(database_file: Path) -> None:
     """Create the application database and required tables."""
@@ -94,4 +119,7 @@ def initialize_database(database_file: Path) -> None:
         connection.execute(CREATE_CHARACTERS_NAME_INDEX)
         connection.execute(CREATE_WORKSPACES_TABLE)
         connection.execute(CREATE_WORKSPACES_PROJECT_NAME_INDEX)
+        connection.execute(CREATE_PROMPTS_TABLE)
+        connection.execute(CREATE_PROMPTS_NAME_INDEX)
+        connection.execute(CREATE_PROMPTS_ACTIVE_VERSION_INDEX)
         connection.commit()

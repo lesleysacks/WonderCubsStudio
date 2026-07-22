@@ -29,6 +29,9 @@ The app helps organize every video into a consistent production folder structure
 - Character duplicate, delete, search, and JSON export actions
 - Workspace Context Engine for the active production project
 - Workspace context validation, switching, persistence, and JSON export
+- Prompt Engine with versioned Story, Image, Voice, Thumbnail, SEO, and Custom templates
+- Prompt Library UI for create, edit-as-new-version, duplicate, delete, search, preview, activation, and export
+- Structured placeholder rendering from workspace context and character data, with no AI-provider communication
 - Application logging to `logs/app.log`
 - Modular Python architecture
 
@@ -41,6 +44,8 @@ Version 0.2 adds the Dashboard feature. The dashboard is now the application's h
 Version 0.3 adds the Character Intelligence foundation. Sprint 3.3 introduces the Character Workspace UI using reusable CustomTkinter components connected through `CharacterController` and `CharacterService`.
 
 Sprint 3.4 adds the Workspace Context Engine. The active production project context now flows through `WorkspaceController`, `WorkspaceService`, and `WorkspaceRepository`, with structured JSON export ready for future Story, Voice, Image, Thumbnail, and SEO agents.
+
+Sprint 3.5 adds the Prompt Engine. Prompt templates flow through `PromptWindow`, `PromptController`, `PromptService`, and `PromptRepository`; each edit creates an immutable new version and only one version is active. Templates can be exported as JSON, TXT, or Markdown and are rendered locally only.
 
 ## Installation
 

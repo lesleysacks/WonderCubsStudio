@@ -17,6 +17,21 @@
 
 ## v0.3.0 (In Development)
 
+### Sprint 3.5 - Prompt Engine Foundation
+
+#### Added
+
+- Versioned Prompt model and SQLite `Prompts` migration with a single-active-version constraint
+- Prompt repository, service, and controller following the established architecture
+- Placeholder validation and local variable rendering for workspace and character context
+- Prompt categories: Story, Image, Voice, Thumbnail, SEO, and Custom
+- Prompt Library UI with create, edit, duplicate, delete, search, preview, version activation, and export actions
+- JSON, TXT, and Markdown prompt exports; no AI provider integration
+
+#### Testing
+
+- Added Prompt Engine CRUD, validation, rendering, preview, export, versioning, search, controller, and regression tests
+
 ### Sprint 3.4.1 - Project Creation UX Improvements
 
 #### Added

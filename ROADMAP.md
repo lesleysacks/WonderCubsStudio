@@ -46,12 +46,12 @@
 - Project creation UX and lifecycle improvements
 - Automatic numbering, status workflow, folder preview, and workspace activation
 
-### Sprint 3.5 - Next
+### Sprint 3.5 - Complete
 
-- Story Agent context consumption
-- Agent input contracts
-- Workspace-aware prompt builder
-- Project lifecycle status transitions and workspace-to-project linking
+- Prompt Engine foundation
+- Versioned reusable prompt templates
+- Workspace- and character-aware prompt rendering
+- Local prompt exports (JSON, TXT, Markdown)
 
 ### Sprint 3.6
 

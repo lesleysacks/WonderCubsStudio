@@ -14,6 +14,7 @@ from src.models.settings import AppSettings
 from src.services.project_service import ProjectService
 from src.ui.character.character_window import CharacterWindow
 from src.ui.workspace.workspace_window import WorkspaceWindow
+from src.ui.prompt.prompt_window import PromptWindow
 from src.utils.logger import get_logger
 
 
@@ -58,7 +59,7 @@ class WonderCubsApp(ctk.CTk):
             ("Workspace", self._show_workspace),
             ("Projects", self._open_project_picker),
             ("Characters", self._show_characters),
-            ("Prompt Library", lambda: self._show_coming_soon("Prompt Library")),
+            ("Prompt Library", self._show_prompts),
             ("Analytics", lambda: self._show_coming_soon("Analytics")),
             ("Settings", self._open_settings),
         )
@@ -188,7 +189,7 @@ class WonderCubsApp(ctk.CTk):
             ("Continue Project", self._open_project_picker),
             ("Workspace Context", self._show_workspace),
             ("Character Manager", self._show_characters),
-            ("Prompt Library", lambda: self._show_coming_soon("Prompt Library")),
+            ("Prompt Library", self._show_prompts),
             ("Analytics", lambda: self._show_coming_soon("Analytics")),
             ("Settings", self._open_settings),
         )
@@ -240,6 +241,12 @@ class WonderCubsApp(ctk.CTk):
         self._set_active_nav("Workspace")
         content = self._clear_content()
         workspace = WorkspaceWindow(content, self._controller.get_workspace_controller())
+        workspace.grid(row=0, column=0, sticky="nsew")
+
+    def _show_prompts(self) -> None:
+        self._set_active_nav("Prompt Library")
+        content = self._clear_content()
+        workspace = PromptWindow(content, self._controller.get_prompt_controller())
         workspace.grid(row=0, column=0, sticky="nsew")
 
     def _open_new_project_dialog(self) -> None:

@@ -5,8 +5,10 @@ from src.database.dashboard_repository import DashboardRepository
 from src.database.character_repository import CharacterRepository
 from src.database.project_repository import ProjectRepository
 from src.database.workspace_repository import WorkspaceRepository
+from src.database.prompt_repository import PromptRepository
 from src.controllers.character_controller import CharacterController
 from src.controllers.workspace_controller import WorkspaceController
+from src.controllers.prompt_controller import PromptController
 from src.models.dashboard import DashboardData
 from src.models.project import Project
 from src.models.settings import AppSettings
@@ -17,6 +19,7 @@ from src.services.explorer_service import ExplorerService
 from src.services.project_service import ProjectService
 from src.services.settings_service import SettingsService
 from src.services.workspace_service import WorkspaceService
+from src.services.prompt_service import PromptService
 from src.utils.app_paths import AppPaths
 from src.utils.logger import get_logger
 
@@ -31,12 +34,17 @@ class MainController:
         dashboard_repository = DashboardRepository(paths.database_file)
         character_repository = CharacterRepository(paths.database_file)
         workspace_repository = WorkspaceRepository(paths.database_file)
+        prompt_repository = PromptRepository(paths.database_file)
         self._project_service = ProjectService(repository, paths.projects_dir)
         self._dashboard_service = DashboardService(dashboard_repository)
         self._character_service = CharacterService(character_repository)
         self._workspace_service = WorkspaceService(workspace_repository)
+        self._prompt_service = PromptService(
+            prompt_repository, self._workspace_service, self._character_service
+        )
         self._character_controller = CharacterController(self._character_service)
         self._workspace_controller = WorkspaceController(self._workspace_service)
+        self._prompt_controller = PromptController(self._prompt_service)
         self._explorer_service = ExplorerService()
 
     def create_project(self, title: str, lesson: str, status: str = ProjectService.DEFAULT_STATUS) -> Project:
@@ -90,3 +98,7 @@ class MainController:
     def get_workspace_controller(self) -> WorkspaceController:
         """Return the Workspace Context controller."""
         return self._workspace_controller
+
+    def get_prompt_controller(self) -> PromptController:
+        """Return the Prompt Engine controller."""
+        return self._prompt_controller

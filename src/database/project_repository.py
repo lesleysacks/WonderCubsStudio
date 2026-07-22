@@ -43,3 +43,16 @@ class ProjectRepository:
         with create_connection(self._database_file) as connection:
             rows = connection.execute(query).fetchall()
         return [Project(**dict(row)) for row in rows]
+
+    def get_next_video_number(self) -> str:
+        """Return the next zero-padded project number from persisted projects."""
+        with create_connection(self._database_file) as connection:
+            rows = connection.execute("SELECT video_number FROM Projects").fetchall()
+
+        numeric_numbers = [
+            int(str(row["video_number"]))
+            for row in rows
+            if str(row["video_number"]).isdigit()
+        ]
+        next_number = max(numeric_numbers, default=0) + 1
+        return f"{next_number:03d}"

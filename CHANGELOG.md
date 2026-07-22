@@ -17,6 +17,21 @@
 
 ## v0.3.0 (In Development)
 
+### Sprint 3.4.1 - Project Creation UX Improvements
+
+#### Added
+
+- Database-generated, read-only project numbering
+- Project lifecycle status selection and persistence
+- Live project-folder preview and title-field focus
+- Resizable, scrollable New Project dialog
+- Global Ctrl+C, Ctrl+V, Ctrl+X, and Ctrl+A support for editable text fields
+- Automatic dashboard refresh, project opening, and workspace activation after project creation
+
+#### Testing
+
+- Added project-numbering, status, folder-preview, and project-creation regression tests
+
 ### Sprint 3.4 - Workspace Context Engine
 
 #### Added

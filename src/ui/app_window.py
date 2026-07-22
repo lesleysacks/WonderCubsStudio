@@ -1,6 +1,7 @@
 """CustomTkinter user interface."""
 from __future__ import annotations
 
+import tkinter as tk
 import tkinter.messagebox as messagebox
 from typing import Callable
 
@@ -10,6 +11,7 @@ from src.controllers.main_controller import MainController
 from src.models.dashboard import DashboardData, ProjectStatistics
 from src.models.project import Project
 from src.models.settings import AppSettings
+from src.services.project_service import ProjectService
 from src.ui.character.character_window import CharacterWindow
 from src.ui.workspace.workspace_window import WorkspaceWindow
 from src.utils.logger import get_logger
@@ -31,6 +33,7 @@ class WonderCubsApp(ctk.CTk):
         self.minsize(940, 620)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
+        self._install_text_shortcuts()
         self._build_shell()
         self._show_dashboard()
 
@@ -240,7 +243,16 @@ class WonderCubsApp(ctk.CTk):
         workspace.grid(row=0, column=0, sticky="nsew")
 
     def _open_new_project_dialog(self) -> None:
-        NewProjectDialog(self, self._controller, on_project_created=self._show_dashboard)
+        NewProjectDialog(self, self._controller, on_project_created=self._after_project_created)
+
+    def _after_project_created(self, project: Project) -> None:
+        """Refresh project-facing views and open the project after creation."""
+        self._show_dashboard()
+        try:
+            self._controller.open_project_folder(project)
+        except Exception as error:
+            self.show_error("Could not open project", error)
+        self._open_project_picker()
 
     def _open_project_picker(self) -> None:
         ProjectListWindow(self, self._controller, mode="open")
@@ -256,6 +268,50 @@ class WonderCubsApp(ctk.CTk):
         self._logger.exception(title)
         messagebox.showerror(title, str(error))
 
+    def _install_text_shortcuts(self) -> None:
+        """Provide familiar clipboard shortcuts to every Tk-backed editable field."""
+        for sequence in ("<Control-c>", "<Control-v>", "<Control-x>", "<Control-a>"):
+            self.bind_all(sequence, self._handle_text_shortcut, add="+")
+
+    @staticmethod
+    def _handle_text_shortcut(event: tk.Event) -> str | None:
+        widget = event.widget
+        if not isinstance(widget, (tk.Entry, tk.Text)):
+            return None
+        action = event.keysym.lower()
+        try:
+            if action == "a":
+                if isinstance(widget, tk.Entry):
+                    widget.selection_range(0, tk.END)
+                    widget.icursor(tk.END)
+                else:
+                    widget.tag_add(tk.SEL, "1.0", tk.END)
+                return "break"
+            if action in {"c", "x"}:
+                if not widget.selection_present():
+                    return "break"
+                selected = widget.selection_get()
+                widget.clipboard_clear()
+                widget.clipboard_append(selected)
+                if action == "x":
+                    if isinstance(widget, tk.Entry):
+                        widget.delete("sel.first", "sel.last")
+                    else:
+                        widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                return "break"
+            if action == "v":
+                clipboard = widget.clipboard_get()
+                if isinstance(widget, tk.Entry):
+                    if widget.selection_present():
+                        widget.delete("sel.first", "sel.last")
+                    widget.insert(tk.INSERT, clipboard)
+                else:
+                    widget.insert(tk.INSERT, clipboard)
+                return "break"
+        except tk.TclError:
+            return "break"
+        return None
+
 
 class NewProjectDialog(ctk.CTkToplevel):
     """Dialog for creating a project."""
@@ -264,43 +320,71 @@ class NewProjectDialog(ctk.CTkToplevel):
         self,
         parent: WonderCubsApp,
         controller: MainController,
-        on_project_created: Callable[[], None] | None = None,
+        on_project_created: Callable[[Project], None] | None = None,
     ) -> None:
         super().__init__(parent)
         self._parent = parent
         self._controller = controller
         self._on_project_created = on_project_created
         self.title("New Project")
-        self.geometry("420x330")
-        self.resizable(False, False)
+        self.geometry("560x560")
+        self.minsize(420, 400)
+        self.resizable(True, True)
         self.transient(parent)
         self.grab_set()
         self._entries: dict[str, ctk.CTkEntry] = {}
+        self._status: ctk.CTkOptionMenu | None = None
+        self._folder_preview = tk.StringVar(value="")
         self._build()
 
     def _build(self) -> None:
         self.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(self, text="New Project", font=("Segoe UI", 22, "bold")).grid(row=0, column=0, pady=(22, 16))
-        fields = (("Video Title", "Leo Learns Colors"), ("Lesson", "Colors"), ("Video Number", "001"))
+        self.grid_rowconfigure(0, weight=1)
+        form = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        form.grid(row=0, column=0, sticky="nsew", padx=24, pady=18)
+        form.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(form, text="New Project", font=("Segoe UI", 22, "bold")).grid(row=0, column=0, pady=(4, 16))
+        fields = (("Video Title", "Leo Learns Colors"), ("Lesson", "Colors"))
         for row, (label, placeholder) in enumerate(fields, start=1):
-            ctk.CTkLabel(self, text=label).grid(row=row * 2 - 1, column=0, sticky="w", padx=42)
-            entry = ctk.CTkEntry(self, placeholder_text=placeholder, width=320)
-            entry.grid(row=row * 2, column=0, pady=(2, 10))
+            ctk.CTkLabel(form, text=label).grid(row=row * 2 - 1, column=0, sticky="w")
+            entry = ctk.CTkEntry(form, placeholder_text=placeholder)
+            entry.grid(row=row * 2, column=0, pady=(2, 10), sticky="ew")
             self._entries[label] = entry
-        ctk.CTkButton(self, text="Create Project", command=self._create_project, width=180).grid(row=7, column=0, pady=(8, 8))
-        ctk.CTkButton(self, text="Cancel", command=self.destroy, width=180, fg_color="gray").grid(row=8, column=0)
+        ctk.CTkLabel(form, text="Project Number").grid(row=5, column=0, sticky="w")
+        number = ctk.CTkEntry(form)
+        number.insert(0, self._controller.get_next_project_number())
+        number.configure(state="readonly")
+        number.grid(row=6, column=0, pady=(2, 10), sticky="ew")
+        self._entries["Project Number"] = number
+        ctk.CTkLabel(form, text="Status").grid(row=7, column=0, sticky="w")
+        self._status = ctk.CTkOptionMenu(form, values=list(ProjectService.VALID_STATUSES))
+        self._status.set(ProjectService.DEFAULT_STATUS)
+        self._status.grid(row=8, column=0, pady=(2, 10), sticky="ew")
+        ctk.CTkLabel(form, text="Project Folder", text_color="#a8b3c7").grid(row=9, column=0, sticky="w")
+        ctk.CTkLabel(form, textvariable=self._folder_preview, wraplength=480, justify="left", anchor="w", text_color="#93c5fd").grid(row=10, column=0, pady=(2, 16), sticky="ew")
+        actions = ctk.CTkFrame(form, fg_color="transparent")
+        actions.grid(row=11, column=0, sticky="ew")
+        actions.grid_columnconfigure((0, 1), weight=1)
+        ctk.CTkButton(actions, text="Create Project", command=self._create_project).grid(row=0, column=0, padx=(0, 6), sticky="ew")
+        ctk.CTkButton(actions, text="Cancel", command=self.destroy, fg_color="gray").grid(row=0, column=1, padx=(6, 0), sticky="ew")
+        self._entries["Video Title"].bind("<KeyRelease>", self._update_folder_preview)
+        self._update_folder_preview()
+        self.after(100, self._entries["Video Title"].focus_set)
+
+    def _update_folder_preview(self, _event: object | None = None) -> None:
+        self._folder_preview.set(self._controller.get_project_folder_preview(self._entries["Video Title"].get()))
 
     def _create_project(self) -> None:
         try:
             project = self._controller.create_project(
-                video_number=self._entries["Video Number"].get(),
                 title=self._entries["Video Title"].get(),
                 lesson=self._entries["Lesson"].get(),
+                status=self._status.get() if self._status is not None else ProjectService.DEFAULT_STATUS,
             )
             messagebox.showinfo("Project Created", f"Created project: {project.title}")
             self.destroy()
             if self._on_project_created is not None:
-                self._on_project_created()
+                self._on_project_created(project)
         except Exception as error:
             self._parent.show_error("Could not create project", error)
 

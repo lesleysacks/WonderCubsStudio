@@ -41,11 +41,17 @@
 - Active production project context
 - Context export for future agents
 
+### Sprint 3.4.1 - Complete
+
+- Project creation UX and lifecycle improvements
+- Automatic numbering, status workflow, folder preview, and workspace activation
+
 ### Sprint 3.5 - Next
 
 - Story Agent context consumption
 - Agent input contracts
 - Workspace-aware prompt builder
+- Project lifecycle status transitions and workspace-to-project linking
 
 ### Sprint 3.6
 

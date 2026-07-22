@@ -10,6 +10,7 @@ from src.controllers.workspace_controller import WorkspaceController
 from src.models.dashboard import DashboardData
 from src.models.project import Project
 from src.models.settings import AppSettings
+from src.models.workspace import Workspace
 from src.services.character_service import CharacterService
 from src.services.dashboard_service import DashboardService
 from src.services.explorer_service import ExplorerService
@@ -38,10 +39,27 @@ class MainController:
         self._workspace_controller = WorkspaceController(self._workspace_service)
         self._explorer_service = ExplorerService()
 
-    def create_project(self, video_number: str, title: str, lesson: str) -> Project:
+    def create_project(self, title: str, lesson: str, status: str = ProjectService.DEFAULT_STATUS) -> Project:
         """Create a project from UI input."""
-        self._logger.info("Creating project %s - %s", video_number, title)
-        return self._project_service.create_project(video_number, title, lesson)
+        self._logger.info("Creating project: %s", title)
+        project = self._project_service.create_project(title, lesson, status)
+        self._workspace_service.create_workspace(
+            Workspace(
+                project_name=project.title,
+                lesson=project.lesson,
+                topic=project.title,
+                status=project.status,
+            )
+        )
+        return project
+
+    def get_next_project_number(self) -> str:
+        """Return the database-generated number for the next project."""
+        return self._project_service.get_next_project_number()
+
+    def get_project_folder_preview(self, title: str) -> str:
+        """Return a live folder preview for a project title."""
+        return self._project_service.get_folder_preview(title)
 
     def list_projects(self) -> list[Project]:
         """Return all projects for display."""

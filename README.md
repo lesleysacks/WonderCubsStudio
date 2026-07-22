@@ -14,7 +14,10 @@ The app helps organize every video into a consistent production folder structure
 - Today's goal panel backed by SQLite
 - Latest project panel
 - Project summary panel
-- New project creation with video title, lesson, and video number
+- Professional project creation with database-generated, read-only project numbers
+- Live project-folder preview, keyboard clipboard shortcuts, and responsive creation dialog
+- Project lifecycle statuses: Draft, In Production, Review, Ready to Publish, Published, and Archived
+- Newly created projects automatically refresh the dashboard, open in Explorer, and become the active workspace
 - Automatic project folder generation
 - Placeholder production files for story, voice, prompts, thumbnail, SEO, notes, and README content
 - SQLite project database

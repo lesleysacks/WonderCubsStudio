@@ -12,7 +12,15 @@ from src.models.project import Project
 class ProjectService:
     """Coordinate project database records and filesystem assets."""
 
-    STATUS_IN_PROGRESS = "In Progress"
+    DEFAULT_STATUS = "Draft"
+    VALID_STATUSES = (
+        "Draft",
+        "In Production",
+        "Review",
+        "Ready to Publish",
+        "Published",
+        "Archived",
+    )
     PIPELINE_FOLDERS = (
         "Story",
         "Voice",
@@ -42,12 +50,13 @@ class ProjectService:
         self._repository = repository
         self._projects_dir = projects_dir
 
-    def create_project(self, video_number: str, title: str, lesson: str) -> Project:
+    def create_project(self, title: str, lesson: str, status: str = DEFAULT_STATUS) -> Project:
         """Create a project folder tree and save its database record."""
-        clean_number = video_number.strip()
+        clean_number = self.get_next_project_number()
         clean_title = title.strip()
         clean_lesson = lesson.strip()
-        self._validate_project_data(clean_number, clean_title, clean_lesson)
+        clean_status = status.strip()
+        self._validate_project_data(clean_number, clean_title, clean_lesson, clean_status)
 
         folder_name = f"{clean_number}_{self._slugify(clean_title)}"
         project_folder = self._projects_dir / folder_name
@@ -56,19 +65,27 @@ class ProjectService:
 
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self._create_project_folders(project_folder)
-        self._write_project_readme(project_folder, clean_title, clean_lesson, created_at)
+        self._write_project_readme(project_folder, clean_title, clean_lesson, clean_status, created_at)
 
         project = Project(
             id=None,
             video_number=clean_number,
             title=clean_title,
             lesson=clean_lesson,
-            status=self.STATUS_IN_PROGRESS,
+            status=clean_status,
             created_at=created_at,
             folder_path=str(project_folder),
         )
         project_id = self._repository.add(project)
-        return Project(project_id, clean_number, clean_title, clean_lesson, self.STATUS_IN_PROGRESS, created_at, str(project_folder))
+        return Project(project_id, clean_number, clean_title, clean_lesson, clean_status, created_at, str(project_folder))
+
+    def get_next_project_number(self) -> str:
+        """Return the database-derived number for the next project."""
+        return self._repository.get_next_video_number()
+
+    def get_folder_preview(self, title: str) -> str:
+        """Return the folder path that would be created for the current title."""
+        return str(self._projects_dir / f"{self.get_next_project_number()}_{self._slugify(title.strip())}")
 
     def list_projects(self) -> list[Project]:
         """Return all known projects."""
@@ -82,7 +99,7 @@ class ProjectService:
             for file_name, content in self.PLACEHOLDER_FILES.get(folder_name, {}).items():
                 (folder / file_name).write_text(content, encoding="utf-8")
 
-    def _write_project_readme(self, project_folder: Path, title: str, lesson: str, created_at: str) -> None:
+    def _write_project_readme(self, project_folder: Path, title: str, lesson: str, status: str, created_at: str) -> None:
         content = f"""# {title}
 
 ## Project Name
@@ -95,7 +112,7 @@ class ProjectService:
 
 ## Status
 
-{self.STATUS_IN_PROGRESS}
+{status}
 
 ## Date Created
 
@@ -119,10 +136,12 @@ class ProjectService:
         return value.strip("_") or "Untitled"
 
     @staticmethod
-    def _validate_project_data(video_number: str, title: str, lesson: str) -> None:
+    def _validate_project_data(video_number: str, title: str, lesson: str, status: str) -> None:
         if not video_number:
             raise ValueError("Video Number is required.")
         if not title:
             raise ValueError("Video Title is required.")
         if not lesson:
             raise ValueError("Lesson is required.")
+        if status not in ProjectService.VALID_STATUSES:
+            raise ValueError("Project status is invalid.")

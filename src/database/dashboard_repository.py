@@ -39,7 +39,7 @@ class DashboardRepository:
         return ProjectStatistics(
             total_projects=total_projects,
             published_projects=published,
-            projects_in_progress=counts.get("In Progress", 0),
+            projects_in_progress=counts.get("In Progress", 0) + counts.get("In Production", 0),
             draft_projects=counts.get("Draft", 0),
             videos_uploaded=uploaded,
             completed_projects=completed,

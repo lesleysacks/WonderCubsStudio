@@ -9,13 +9,14 @@ import customtkinter as ctk
 
 from src.controllers.workspace_controller import WorkspaceController
 from src.models.workspace import Workspace
+from src.models.project import ProjectStatus
 
 
 class WorkspaceWindow(ctk.CTkFrame):
     """Modular Workspace Context UI."""
 
     ASPECT_RATIOS = ("16:9", "9:16", "1:1", "4:3")
-    STATUS_VALUES = ("Draft", "In Progress", "Ready", "Published")
+    STATUS_VALUES = ProjectStatus.values()
 
     def __init__(self, parent: ctk.CTkFrame, controller: WorkspaceController) -> None:
         super().__init__(parent, corner_radius=0, fg_color="#0b1120")

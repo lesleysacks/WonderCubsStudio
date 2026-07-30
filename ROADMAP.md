@@ -76,3 +76,7 @@
 * Production Release
 * Plugin Architecture
 * Creator Workspace
+# Sprint 3.4.2 — Project Lifecycle & Dashboard Synchronization
+
+Implemented the persisted six-state project lifecycle, database-backed
+dashboard synchronization, recent activity, and safe schema upgrade.

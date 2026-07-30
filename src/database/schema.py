@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sqlite3
 
 from src.database.connection import create_connection
 
@@ -11,8 +12,10 @@ CREATE TABLE IF NOT EXISTS Projects (
     video_number TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     lesson TEXT NOT NULL,
-    status TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Draft',
     created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
     folder_path TEXT NOT NULL
 );
 """
@@ -122,4 +125,39 @@ def initialize_database(database_file: Path) -> None:
         connection.execute(CREATE_PROMPTS_TABLE)
         connection.execute(CREATE_PROMPTS_NAME_INDEX)
         connection.execute(CREATE_PROMPTS_ACTIVE_VERSION_INDEX)
+        _upgrade_projects_schema(connection)
         connection.commit()
+
+
+def _upgrade_projects_schema(connection: sqlite3.Connection) -> None:
+    """Idempotently add lifecycle fields while preserving existing rows."""
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(Projects)").fetchall()
+    }
+    if "status" not in columns:
+        connection.execute("ALTER TABLE Projects ADD COLUMN status TEXT DEFAULT 'Draft'")
+    if "created_at" not in columns:
+        connection.execute("ALTER TABLE Projects ADD COLUMN created_at TEXT")
+    if "updated_at" not in columns:
+        connection.execute("ALTER TABLE Projects ADD COLUMN updated_at TEXT")
+    if "published_at" not in columns:
+        connection.execute("ALTER TABLE Projects ADD COLUMN published_at TEXT")
+
+    connection.execute(
+        "UPDATE Projects SET status = 'Draft' WHERE status IS NULL OR TRIM(status) = ''"
+    )
+    connection.execute(
+        """
+        UPDATE Projects
+        SET created_at = COALESCE(NULLIF(created_at, ''), CURRENT_TIMESTAMP)
+        WHERE created_at IS NULL OR created_at = ''
+        """
+    )
+    connection.execute(
+        """
+        UPDATE Projects
+        SET updated_at = COALESCE(NULLIF(updated_at, ''), created_at, CURRENT_TIMESTAMP)
+        WHERE updated_at IS NULL OR updated_at = ''
+        """
+    )

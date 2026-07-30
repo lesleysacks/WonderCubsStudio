@@ -1,6 +1,7 @@
 """Controller for Workspace Context Engine actions."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from src.models.workspace import Workspace
@@ -11,8 +12,13 @@ from src.utils.logger import get_logger
 class WorkspaceController:
     """Coordinate Workspace UI actions with WorkspaceService."""
 
-    def __init__(self, service: WorkspaceService) -> None:
+    def __init__(
+        self,
+        service: WorkspaceService,
+        project_status_saver: Callable[[str, str], object] | None = None,
+    ) -> None:
         self._service = service
+        self._project_status_saver = project_status_saver
         self._logger = get_logger(__name__)
 
     def on_new_workspace(self) -> Workspace:
@@ -26,7 +32,13 @@ class WorkspaceController:
 
     def on_save_workspace(self, workspace: Workspace) -> Workspace:
         """Create or update a workspace through the service."""
-        return self._service.save_workspace(workspace)
+        saved_workspace = self._service.save_workspace(workspace)
+        if self._project_status_saver is not None:
+            self._project_status_saver(
+                saved_workspace.project_name,
+                saved_workspace.status,
+            )
+        return saved_workspace
 
     def on_close_workspace(self) -> Workspace | None:
         """Close the active workspace for UI purposes."""

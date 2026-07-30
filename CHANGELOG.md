@@ -188,3 +188,12 @@
 ### Notes
 
 First public release of WonderCubs Studio.
+# Sprint 3.4.2 — Project Lifecycle & Dashboard Synchronization
+
+- Added the official six-state project lifecycle and safe timestamp migration.
+- Persisted workspace status changes through the project service before
+  publishing `project_updated`.
+- Expanded database-backed dashboard totals, recent activity, latest update,
+  active production, and next video number.
+- Added regression coverage for migration, lifecycle timestamps, failed saves,
+  event subscriptions, dashboard totals, and activity ordering.

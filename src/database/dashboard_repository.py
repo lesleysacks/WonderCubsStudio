@@ -13,8 +13,6 @@ from src.utils.logger import get_logger
 class DashboardRepository:
     """Read dashboard data from SQLite."""
 
-    COMPLETED_STATUSES = ("Completed", "Published", "Uploaded")
-
     def __init__(self, database_file: Path) -> None:
         self._database_file = database_file
         self._logger = get_logger(__name__)
@@ -30,27 +28,38 @@ class DashboardRepository:
             self._logger.exception("Failed to load dashboard statistics")
             raise
 
-        counts = {str(row["status"]): int(row["total"]) for row in rows}
+        counts = {
+            str(row["status"] or "Draft"): int(row["total"]) for row in rows
+        }
         total_projects = sum(counts.values())
         published = counts.get("Published", 0)
         uploaded = counts.get("Uploaded", 0)
-        completed = sum(counts.get(status, 0) for status in self.COMPLETED_STATUSES)
+        active = sum(
+            counts.get(status, 0)
+            for status in ("In Production", "Review", "Ready to Publish")
+        )
 
         return ProjectStatistics(
             total_projects=total_projects,
-            published_projects=published,
-            projects_in_progress=counts.get("In Progress", 0) + counts.get("In Production", 0),
             draft_projects=counts.get("Draft", 0),
+            in_production_projects=counts.get("In Production", 0),
+            review_projects=counts.get("Review", 0),
+            ready_to_publish_projects=counts.get("Ready to Publish", 0),
+            published_projects=published,
+            archived_projects=counts.get("Archived", 0),
+            active_production_count=active,
+            projects_in_progress=active + counts.get("In Progress", 0),
             videos_uploaded=uploaded,
-            completed_projects=completed,
+            completed_projects=published + uploaded,
         )
 
     def get_latest_project(self) -> Project | None:
         """Return the newest project by creation date."""
         query = """
-        SELECT id, video_number, title, lesson, status, created_at, folder_path
+        SELECT id, video_number, title, lesson, status, created_at, folder_path,
+               updated_at, published_at
         FROM Projects
-        ORDER BY datetime(created_at) DESC, id DESC
+        ORDER BY datetime(updated_at) DESC, id DESC
         LIMIT 1
         """
         try:

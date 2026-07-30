@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+import pytest
+
 from src.controllers.workspace_controller import WorkspaceController
 from src.models.workspace import Workspace
 
@@ -27,6 +29,64 @@ def test_save_button_flow_calls_workspace_service() -> None:
 
     assert service.saved == [workspace.uuid, workspace.uuid]
     assert updated.status == "In Progress"
+
+
+def test_failed_workspace_save_skips_project_lifecycle_sync() -> None:
+    workspace = _make_workspace()
+    lifecycle_updates: list[tuple[str, str]] = []
+    project_updated_events: list[dict[str, str]] = []
+
+    class FailingWorkspaceService(FakeWorkspaceService):
+        def save_workspace(self, workspace: Workspace) -> Workspace:
+            raise RuntimeError("workspace save failed")
+
+    def save_project_status(project_name: str, status: str) -> None:
+        lifecycle_updates.append((project_name, status))
+        project_updated_events.append(
+            {"project_name": project_name, "status": status}
+        )
+
+    controller = WorkspaceController(
+        FailingWorkspaceService(),
+        project_status_saver=save_project_status,
+    )  # type: ignore[arg-type]
+
+    with pytest.raises(RuntimeError, match="workspace save failed"):
+        controller.on_save_workspace(workspace)
+
+    assert lifecycle_updates == []
+    assert project_updated_events == []
+
+
+def test_successful_workspace_save_precedes_sync_and_uses_saved_values() -> None:
+    original = _make_workspace()
+    saved_workspace = replace(
+        original,
+        project_name="Saved Project Name",
+        status="Review",
+    )
+    calls: list[str] = []
+    synchronized: list[tuple[str, str]] = []
+
+    class RecordingWorkspaceService(FakeWorkspaceService):
+        def save_workspace(self, workspace: Workspace) -> Workspace:
+            calls.append("workspace")
+            return saved_workspace
+
+    def save_project_status(project_name: str, status: str) -> None:
+        calls.append("project")
+        synchronized.append((project_name, status))
+
+    controller = WorkspaceController(
+        RecordingWorkspaceService(),
+        project_status_saver=save_project_status,
+    )  # type: ignore[arg-type]
+
+    result = controller.on_save_workspace(original)
+
+    assert calls == ["workspace", "project"]
+    assert synchronized == [("Saved Project Name", "Review")]
+    assert result is saved_workspace
 
 
 def test_switch_workspace_flow_calls_service() -> None:

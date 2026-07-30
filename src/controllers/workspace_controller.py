@@ -32,9 +32,13 @@ class WorkspaceController:
 
     def on_save_workspace(self, workspace: Workspace) -> Workspace:
         """Create or update a workspace through the service."""
+        saved_workspace = self._service.save_workspace(workspace)
         if self._project_status_saver is not None:
-            self._project_status_saver(workspace.project_name, workspace.status)
-        return self._service.save_workspace(workspace)
+            self._project_status_saver(
+                saved_workspace.project_name,
+                saved_workspace.status,
+            )
+        return saved_workspace
 
     def on_close_workspace(self) -> Workspace | None:
         """Close the active workspace for UI purposes."""

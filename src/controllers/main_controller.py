@@ -22,6 +22,7 @@ from src.services.workspace_service import WorkspaceService
 from src.services.prompt_service import PromptService
 from src.utils.app_paths import AppPaths
 from src.utils.logger import get_logger
+from src.utils.event_bus import EventBus, EventCallback
 
 
 class MainController:
@@ -35,15 +36,22 @@ class MainController:
         character_repository = CharacterRepository(paths.database_file)
         workspace_repository = WorkspaceRepository(paths.database_file)
         prompt_repository = PromptRepository(paths.database_file)
-        self._project_service = ProjectService(repository, paths.projects_dir)
-        self._dashboard_service = DashboardService(dashboard_repository)
+        self._event_bus = EventBus()
+        self._project_service = ProjectService(
+            repository, paths.projects_dir, self._event_bus
+        )
+        self._dashboard_service = DashboardService(
+            dashboard_repository, self._project_service
+        )
         self._character_service = CharacterService(character_repository)
         self._workspace_service = WorkspaceService(workspace_repository)
         self._prompt_service = PromptService(
             prompt_repository, self._workspace_service, self._character_service
         )
         self._character_controller = CharacterController(self._character_service)
-        self._workspace_controller = WorkspaceController(self._workspace_service)
+        self._workspace_controller = WorkspaceController(
+            self._workspace_service, self._project_service.change_status_by_title
+        )
         self._prompt_controller = PromptController(self._prompt_service)
         self._explorer_service = ExplorerService()
 
@@ -72,6 +80,16 @@ class MainController:
     def list_projects(self) -> list[Project]:
         """Return all projects for display."""
         return self._project_service.list_projects()
+
+    def change_project_status(self, project_id: int, status: str) -> Project:
+        """Persist a project lifecycle change through the service."""
+        return self._project_service.change_status(project_id, status)
+
+    def subscribe(self, event_name: str, callback: EventCallback) -> None:
+        self._event_bus.subscribe(event_name, callback)
+
+    def unsubscribe(self, event_name: str, callback: EventCallback) -> None:
+        self._event_bus.unsubscribe(event_name, callback)
 
     def open_project_folder(self, project: Project) -> None:
         """Open a project folder in Windows Explorer."""

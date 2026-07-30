@@ -6,14 +6,20 @@ from datetime import date
 from src.database.dashboard_repository import DashboardRepository
 from src.models.dashboard import DashboardData, DailyGoal, ProjectStatistics
 from src.models.project import Project
+from src.services.project_service import ProjectService
 from src.utils.logger import get_logger
 
 
 class DashboardService:
     """Provide dashboard-ready application data."""
 
-    def __init__(self, repository: DashboardRepository) -> None:
+    def __init__(
+        self,
+        repository: DashboardRepository,
+        project_service: ProjectService | None = None,
+    ) -> None:
         self._repository = repository
+        self._project_service = project_service
         self._logger = get_logger(__name__)
 
     def get_dashboard_data(self) -> DashboardData:
@@ -26,6 +32,14 @@ class DashboardService:
             statistics=statistics,
             latest_project=latest_project,
             todays_goal=todays_goal,
+            next_video_number=(
+                self._project_service.get_next_project_number()
+                if self._project_service else "001"
+            ),
+            recent_activity=(
+                tuple(self._project_service.get_recent_activity())
+                if self._project_service else ()
+            ),
         )
 
     def get_statistics(self) -> ProjectStatistics:

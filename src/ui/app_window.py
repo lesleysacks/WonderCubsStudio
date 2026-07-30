@@ -29,6 +29,7 @@ class WonderCubsApp(ctk.CTk):
         self._logger = get_logger(__name__)
         self._content_frame: ctk.CTkFrame | None = None
         self._nav_buttons: dict[str, ctk.CTkButton] = {}
+        self._active_nav = "Dashboard"
         self.title("WonderCubs Studio v0.3")
         self.geometry("1120x720")
         self.minsize(940, 620)
@@ -36,6 +37,8 @@ class WonderCubsApp(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self._install_text_shortcuts()
         self._build_shell()
+        self._controller.subscribe("project_updated", self._on_project_updated)
+        self.protocol("WM_DELETE_WINDOW", self._close_application)
         self._show_dashboard()
 
     def _build_shell(self) -> None:
@@ -90,6 +93,7 @@ class WonderCubsApp(ctk.CTk):
         return self._content_frame
 
     def _set_active_nav(self, active_label: str) -> None:
+        self._active_nav = active_label
         for label, button in self._nav_buttons.items():
             if label == active_label:
                 button.configure(fg_color="#2563eb", hover_color="#1d4ed8")
@@ -131,20 +135,22 @@ class WonderCubsApp(ctk.CTk):
         self._build_latest_project_panel(page, dashboard)
         self._build_quick_actions(page)
         self._build_project_summary(page, dashboard.statistics)
+        self._build_recent_activity(page, dashboard)
 
     def _build_stat_cards(self, parent: ctk.CTkFrame, statistics: ProjectStatistics) -> None:
         cards = (
             ("Total Projects", statistics.total_projects),
-            ("Published Projects", statistics.published_projects),
-            ("Projects In Progress", statistics.projects_in_progress),
-            ("Draft Projects", statistics.draft_projects),
-            ("Videos Uploaded", statistics.videos_uploaded),
+            ("Draft", statistics.draft_projects),
+            ("In Production", statistics.in_production_projects),
+            ("Review", statistics.review_projects),
+            ("Ready to Publish", statistics.ready_to_publish_projects),
+            ("Published", statistics.published_projects),
+            ("Archived", statistics.archived_projects),
+            ("Active Production", statistics.active_production_count),
         )
         for index, (label, value) in enumerate(cards):
             card = self._card(parent)
             card.grid(row=1, column=index % 4, sticky="nsew", padx=10, pady=10)
-            if index == 4:
-                card.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
             ctk.CTkLabel(card, text=label, text_color="#a8b3c7", anchor="w").pack(anchor="w", padx=18, pady=(18, 6))
             ctk.CTkLabel(card, text=str(value), font=("Segoe UI", 30, "bold"), anchor="w").pack(anchor="w", padx=18, pady=(0, 18))
 
@@ -171,7 +177,7 @@ class WonderCubsApp(ctk.CTk):
             ("Project Name", dashboard.latest_project.title),
             ("Lesson", dashboard.latest_project.lesson),
             ("Status", dashboard.latest_project.status),
-            ("Created Date", dashboard.latest_project.created_at),
+            ("Updated Date", dashboard.latest_project.updated_at),
         )
         for label, value in rows:
             row = ctk.CTkFrame(panel, fg_color="transparent")
@@ -217,6 +223,38 @@ class WonderCubsApp(ctk.CTk):
         for column, (label, value) in enumerate(summaries):
             ctk.CTkLabel(panel, text=str(value), font=("Segoe UI", 24, "bold")).grid(row=1, column=column, pady=(0, 2))
             ctk.CTkLabel(panel, text=label, text_color="#94a3b8").grid(row=2, column=column, pady=(0, 18))
+
+    def _build_recent_activity(
+        self, parent: ctk.CTkFrame, dashboard: DashboardData
+    ) -> None:
+        panel = self._card(parent)
+        panel.grid(row=5, column=0, columnspan=4, sticky="nsew", padx=10, pady=(0, 28))
+        ctk.CTkLabel(
+            panel,
+            text=f"Recent Activity · Next Video {dashboard.next_video_number}",
+            font=("Segoe UI", 20, "bold"),
+        ).pack(anchor="w", padx=20, pady=(18, 10))
+        if not dashboard.recent_activity:
+            ctk.CTkLabel(panel, text="No project activity yet.").pack(
+                anchor="w", padx=20, pady=(0, 18)
+            )
+        for project in dashboard.recent_activity:
+            published = (
+                f" · Published {project.published_at}" if project.published_at else ""
+            )
+            ctk.CTkLabel(
+                panel,
+                text=f"{project.title} · {project.status} · {project.updated_at}{published}",
+                anchor="w",
+            ).pack(anchor="w", padx=20, pady=3)
+
+    def _on_project_updated(self, _payload: dict[str, object]) -> None:
+        if self._active_nav == "Dashboard":
+            self.after_idle(self._show_dashboard)
+
+    def _close_application(self) -> None:
+        self._controller.unsubscribe("project_updated", self._on_project_updated)
+        self.destroy()
 
     @staticmethod
     def _card(parent: ctk.CTkFrame) -> ctk.CTkFrame:

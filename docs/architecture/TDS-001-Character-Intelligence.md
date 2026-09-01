@@ -18,7 +18,7 @@ Status: Approved
 
 The Character Intelligence System provides a single source of truth for all reusable characters used throughout WonderCubs Studio.
 
-Every AI Agent must retrieve character information from this system instead of hardcoded prompts.
+Future AI agents should retrieve character information from this system instead of hardcoded prompts.
 
 This guarantees consistency across stories, images, voice generation, thumbnails and future animation pipelines.
 
@@ -322,7 +322,7 @@ Character CRUD
 
 Database Integrated
 
-Images Stored
+Existing character image folders can be referenced
 
 Prompt Builder
 
@@ -332,6 +332,6 @@ Unit Tests
 
 Documentation Updated
 
-No Known Bugs
+Automated checks pass
 
-Release Ready
+Windows smoke test completed before release

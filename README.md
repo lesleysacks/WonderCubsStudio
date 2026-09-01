@@ -1,133 +1,46 @@
 # WonderCubs Studio
 
-WonderCubs Studio v0.3 is a desktop application for managing an AI-assisted YouTube production pipeline for a preschool educational channel.
+WonderCubs Studio v0.3 (in development) is a local Windows desktop application for organizing preschool video projects and preparing reusable character, workspace, and prompt context. It does not generate media or publish content.
 
-## Project Overview
+## v0.3 scope
 
-The app helps organize every video into a consistent production folder structure, stores project metadata in SQLite, and provides a dashboard for monitoring project progress, today's production goal, and the latest created project.
+- Character database, repository, service, validation, prompt generation, JSON export, and Character Workspace
+- Workspace Context Engine with persistence, switching, validation, and JSON export
+- Provider-independent Prompt Engine foundation with versioning, preview, workspace/character context, and JSON, TXT, and Markdown export
+- Project lifecycle states, automatic numbering, project creation, active-workspace selection, and dashboard synchronization
+- Automated tests, continuous integration, architecture notes, and release documentation
 
-## Features
+Image Manager, Voice Manager, AI Agent Engine, publishing integration, analytics, and a one-click production pipeline are planned for later releases. The Prompt Engine performs local template rendering only and does not contact an AI provider.
 
-- Modern dark dashboard home screen
-- Permanent sidebar navigation
-- Dashboard statistics cards
-- Today's goal panel backed by SQLite
-- Latest project panel
-- Project summary panel
-- Professional project creation with database-generated, read-only project numbers
-- Live project-folder preview, keyboard clipboard shortcuts, and responsive creation dialog
-- Project lifecycle statuses: Draft, In Production, Review, Ready to Publish, Published, and Archived
-- Newly created projects automatically refresh the dashboard, open in Explorer, and become the active workspace
-- Automatic project folder generation
-- Placeholder production files for story, voice, prompts, thumbnail, SEO, notes, and README content
-- SQLite project database
-- Open existing project folders in Windows Explorer
-- Video queue table
-- JSON-backed settings screen
-- Character Workspace with modular list, details, preview, and toolbar panels
-- Character validation through the CharacterService layer
-- Character duplicate, delete, search, and JSON export actions
-- Workspace Context Engine for the active production project
-- Workspace context validation, switching, persistence, and JSON export
-- Prompt Engine with versioned Story, Image, Voice, Thumbnail, SEO, and Custom templates
-- Prompt Library UI for create, edit-as-new-version, duplicate, delete, search, preview, activation, and export
-- Structured placeholder rendering from workspace context and character data, with no AI-provider communication
-- Application logging to `logs/app.log`
-- Modular Python architecture
+## Setup
 
-## Version 0.2
+Python 3.13 and Windows 11 are the supported development environment.
 
-Version 0.2 adds the Dashboard feature. The dashboard is now the application's home screen and displays live project statistics, today's goal, latest project details, quick actions, and sidebar navigation. Future navigation targets that are not implemented yet display `Coming Soon` rather than fake functionality.
-
-## Version 0.3
-
-Version 0.3 adds the Character Intelligence foundation. Sprint 3.3 introduces the Character Workspace UI using reusable CustomTkinter components connected through `CharacterController` and `CharacterService`.
-
-Sprint 3.4 adds the Workspace Context Engine. The active production project context now flows through `WorkspaceController`, `WorkspaceService`, and `WorkspaceRepository`, with structured JSON export ready for future Story, Voice, Image, Thumbnail, and SEO agents.
-
-Sprint 3.5 adds the Prompt Engine. Prompt templates flow through `PromptWindow`, `PromptController`, `PromptService`, and `PromptRepository`; each edit creates an immutable new version and only one version is active. Templates can be exported as JSON, TXT, or Markdown and are rendered locally only.
-
-## Installation
-
-1. Install Python 3.13 or newer.
-2. Open this folder in VS Code.
-3. Create a virtual environment:
-
-   ```powershell
-   python -m venv .venv
-   ```
-
-4. Activate the virtual environment:
-
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-
-5. Install dependencies:
-
-   ```powershell
-   pip install -r requirements.txt
-   ```
-
-6. Run the app:
-
-   ```powershell
-   python app.py
-   ```
-
-## Requirements
-
-- Windows 11
-- Python 3.13+
-- CustomTkinter
-- SQLite, included with Python
-
-## Folder Structure
-
-```text
-WonderCubsStudio/
-|-- app.py
-|-- requirements.txt
-|-- README.md
-|-- config.json
-|-- assets/
-|-- data/
-|   `-- database.db
-|-- logs/
-|-- projects/
-|-- templates/
-|-- src/
-|   |-- ui/
-|   |-- database/
-|   |-- models/
-|   |-- services/
-|   |-- utils/
-|   `-- controllers/
-`-- tests/
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+python app.py
 ```
 
-## Future Roadmap
+Run the automated checks with:
 
-### Version 0.2
+```powershell
+python -m compileall app.py src tests
+python -m pytest -q
+```
 
-- Dashboard: Completed
-- Character Manager
-- Prompt Library
+Runtime data is stored locally in SQLite. Generated databases, logs, exports, projects, caches, and virtual environments are excluded by `.gitignore`.
 
-### Version 0.3
+## Architecture
 
-- Character Workspace
-- Workspace Context Engine
-- Voice Manager
-- Image Manager
-- Analytics Dashboard
+The application follows `UI -> Controller -> Service -> Repository -> SQLite`. See [`docs/architecture/01_System_Architecture.md`](docs/architecture/01_System_Architecture.md) and the sprint records under [`docs/sprints/`](docs/sprints/).
 
-### Version 1.0
+## Roadmap
 
-- AI Agent Integration
-- YouTube API
-- One-click Production Pipeline
+See [`ROADMAP.md`](ROADMAP.md). Version 0.3 remains **In Development** until it is published.
 
 ## License
 
-This project is provided under the MIT License.
+WonderCubs Studio is licensed under the [MIT License](LICENSE).

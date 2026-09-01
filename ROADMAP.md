@@ -1,82 +1,42 @@
 # WonderCubs Studio Roadmap
 
-## Version 0.2
+## v0.1 - Project foundation
 
-* Dashboard - Completed
-* Character Manager
-* Prompt Library
-* Better UI - In Progress
+- Project creation, local folder generation, SQLite persistence, settings, and logging
 
-## Version 0.3
+## v0.2 - Dashboard
 
-* Asset Manager
-* Image Queue
-* Voice Queue
+- Dashboard home, navigation, project statistics, goals, latest project, and project queue
 
-## Version 0.3 - Character Intelligence System
+## v0.3 - Release hardening (In Development)
 
-### Sprint 3.1 ✅ Complete
+1. Character database and repository
+2. Character service, validation, prompt generation, and JSON export
+3. Character Workspace
+4. Workspace Context Engine
+5. Project creation UX: automatic numbering, clipboard shortcuts, title focus, live folder preview, and active-workspace selection
+6. Project lifecycle states and dashboard synchronization
+7. Prompt Engine foundation: reusable versioned templates, context rendering, preview, and JSON/TXT/Markdown export
+8. Automated tests, CI, architecture documentation, and release documentation
 
-- Character database
-- Character model
-- Character repository
-- Database schema
-- Repository tests
+The v0.3 scope does not include media generation or external AI-provider integration.
 
-### Sprint 3.2 - ✅Complete
+## v0.4 - Asset management
 
-- Character service
-- Validation
-- Business rules
-- JSON export
-- Prompt generation
+1. Image Manager with reliable local asset storage, organization, selection, and lifecycle management
+2. Voice Manager using the same proven asset-management foundation
 
-### Sprint 3.3 -✅  Complete
+## v0.5 - Automation foundation
 
-- Character Manager UI
+- AI Agent Engine, introduced only after asset storage and management are reliable
+- Agent-assisted story, image, voice, thumbnail, and SEO workflows
 
-### Sprint 3.4 - Complete
+## v0.6 - Distribution and insights
 
-- Workspace Context Engine
-- Active production project context
-- Context export for future agents
+- Publishing integration
+- Analytics
 
-### Sprint 3.4.1 - Complete
+## v1.0 - Production workflow
 
-- Project creation UX and lifecycle improvements
-- Automatic numbering, status workflow, folder preview, and workspace activation
-
-### Sprint 3.5 - Complete
-
-- Prompt Engine foundation
-- Versioned reusable prompt templates
-- Workspace- and character-aware prompt rendering
-- Local prompt exports (JSON, TXT, Markdown)
-
-### Sprint 3.6
-
-- JSON Export
-
-### Sprint 3.7
-
-- Documentation
-- Testing
-- Release
-
-## Version 0.4
-
-* AI Agent Integration
-
-## Version 0.5
-
-* Analytics Dashboard
-
-## Version 1.0
-
-* Production Release
-* Plugin Architecture
-* Creator Workspace
-# Sprint 3.4.2 — Project Lifecycle & Dashboard Synchronization
-
-Implemented the persisted six-state project lifecycle, database-backed
-dashboard synchronization, recent activity, and safe schema upgrade.
+- Stable end-to-end creator workspace
+- One-click production pipeline after the component workflows are proven

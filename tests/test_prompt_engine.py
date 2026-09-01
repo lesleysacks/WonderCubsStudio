@@ -19,6 +19,11 @@ from src.services.prompt_service import PromptService, PromptValidationError
 from src.services.workspace_service import WorkspaceService
 
 
+def _prompt(name: str = "Colour Story", category: str = "Story", template: str = "Create {{PROJECT_NAME}} lesson {{LESSON}}.", variables: tuple[str, ...] = ()) -> Prompt:
+    return Prompt(id="prompt-id", name=name, category=category, description="A lesson prompt", template=template,
+                  variables=variables, created_at="2026-07-22 10:00:00", updated_at="2026-07-22 10:00:00")
+
+
 def test_prompt_crud_and_search(tmp_path: Path) -> None:
     service = _service(tmp_path)
     created = service.create_prompt(_prompt(name="Colour Story", category="Story"))
@@ -105,8 +110,3 @@ def _service(tmp_path: Path) -> PromptService:
     database_file = tmp_path / "prompts.db"
     initialize_database(database_file)
     return PromptService(PromptRepository(database_file))
-
-
-def _prompt(name: str = "Colour Story", category: str = "Story", template: str = "Create {{PROJECT_NAME}} lesson {{LESSON}}.", variables: tuple[str, ...] = ()) -> Prompt:
-    return Prompt(id="prompt-id", name=name, category=category, description="A lesson prompt", template=template,
-                  variables=variables, created_at="2026-07-22 10:00:00", updated_at="2026-07-22 10:00:00")

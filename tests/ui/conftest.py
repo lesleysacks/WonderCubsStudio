@@ -7,6 +7,8 @@ failure so a broken UI environment cannot pass silently.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import gc
+from functools import lru_cache
 import os
 from pathlib import Path
 from typing import Any
@@ -43,22 +45,35 @@ class UiHarness:
         return [m for m in self.messages if m[0] == "error"]
 
 
-@pytest.fixture
-def ui(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+@lru_cache(maxsize=1)
+def _ui_unavailable_reason() -> str | None:
+    """Probe once per session: every Tk() is a new Tcl interpreter, and on
+    Windows creating many in one process can fail ('tcl_findLibrary')."""
     try:
         import tkinter
-        import tkinter.messagebox as messagebox
     except ImportError as error:
-        _unavailable(f"tkinter is not installed ({error})")
+        return f"tkinter is not installed ({error})"
     try:
         probe = tkinter.Tk()
         probe.destroy()
     except tkinter.TclError as error:
-        _unavailable(f"no display ({error})")
+        return f"no display ({error})"
+    finally:
+        gc.collect()
     try:
         import customtkinter  # noqa: F401
     except ImportError as error:
-        _unavailable(f"customtkinter is not installed ({error})")
+        return f"customtkinter is not installed ({error})"
+    return None
+
+
+@pytest.fixture
+def ui(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    reason = _ui_unavailable_reason()
+    if reason is not None:
+        _unavailable(reason)
+    import tkinter
+    import tkinter.messagebox as messagebox
 
     from src.controllers.main_controller import MainController
     from src.database.schema import initialize_database
@@ -101,3 +116,5 @@ def ui(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             except tkinter.TclError:
                 pass
         app.destroy()
+        del app, harness
+        gc.collect()  # release the Tcl interpreter before the next test

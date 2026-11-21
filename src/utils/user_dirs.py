@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import sys
 
 APP_DIR_NAME = "WonderCubs Studio"
@@ -47,7 +47,8 @@ def user_data_dir(
     if kind == "macos":
         return home / "Library" / "Application Support" / APP_DIR_NAME
     base = env.get("XDG_DATA_HOME", "").strip()
-    root = Path(base) if base and Path(base).is_absolute() else home / ".local" / "share"
+    # XDG paths are POSIX paths; judge them by POSIX rules on every host.
+    root = Path(base) if base and PurePosixPath(base).is_absolute() else home / ".local" / "share"
     return root / LINUX_APP_DIR_NAME
 
 
@@ -65,7 +66,7 @@ def user_documents_dir(
         return (Path(profile) if profile else home) / "Documents"
     if kind == "linux":
         configured = env.get("XDG_DOCUMENTS_DIR", "").strip()
-        if configured and Path(configured).is_absolute():
+        if configured and PurePosixPath(configured).is_absolute():
             return Path(configured)
     documents = home / "Documents"
     return documents if documents.is_dir() or kind != "linux" else home

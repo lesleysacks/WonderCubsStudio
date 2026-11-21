@@ -2,37 +2,84 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.13"]
+    env:
+      # UI tests must run here; a missing Tk or display fails the job
+      # instead of silently skipping tests/ui.
+      WONDERCUBS_REQUIRE_UI_TESTS: "1"
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
+            constraints.txt
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Install virtual display (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Install pinned dependencies
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt -c constraints.txt
+
+      - name: Check installed dependencies are consistent
+        run: python -m pip check
+
+      - name: Report Tk version
+        run: python -c "import tkinter, customtkinter; print('Tk', tkinter.TkVersion, 'CustomTkinter', customtkinter.__version__)"
 
       - name: Compile Python sources and tests
-        run: python -m compileall app.py src tests
+        run: python -m compileall -q app.py src tests
+
+      - name: Run complete test suite (Linux, virtual display)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a python -m pytest -q -rs
 
       - name: Run complete test suite
-        run: python -m pytest -q
+        if: runner.os != 'Linux'
+        run: python -m pytest -q -rs
+
+  dependency-audit:
+    name: Dependency vulnerability audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+
+      - name: Audit pinned requirements
+        run: pip-audit -r requirements.txt -r requirements-dev.txt

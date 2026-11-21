@@ -1,1 +1,4 @@
-customtkinter>=5.2.2
+# Runtime dependencies. Pinned exactly; update deliberately and re-run the
+# full test suite (including tests/ui) before changing a version.
+# CustomTkinter 6.x is a major release that this UI has not been verified on.
+customtkinter==5.2.2

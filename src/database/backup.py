@@ -49,22 +49,31 @@ def verify_database(database_file: Path) -> None:
         raise BackupError(f"Integrity check failed for {database_file}: {result}")
 
 
+def copy_database(source: Path, destination: Path) -> None:
+    """Copy ``source`` to ``destination`` as a verified, all-or-nothing write.
+
+    The copy is written beside the destination, integrity-checked, then moved
+    into place, so ``destination`` is never left half-written.
+    """
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    partial = destination.with_name(destination.name + ".partial")
+    try:
+        _copy_database(source, partial)
+        verify_database(partial)
+        os.replace(partial, destination)
+    except (sqlite3.Error, OSError, BackupError) as error:
+        partial.unlink(missing_ok=True)
+        raise BackupError(f"Could not copy {source} to {destination}: {error}") from error
+
+
 def create_backup(database_file: Path, backup_dir: Path, label: str) -> Path:
     """Create and verify a timestamped copy of ``database_file`` in ``backup_dir``."""
     if not database_file.is_file():
         raise BackupError(f"Database not found: {database_file}")
-    backup_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     clean_label = _LABEL_PATTERN.sub("-", label).strip("-") or "backup"
     backup_path = backup_dir / f"{database_file.stem}-{stamp}-{clean_label}{BACKUP_SUFFIX}"
-    partial = backup_path.with_name(backup_path.name + ".partial")
-    try:
-        _copy_database(database_file, partial)
-        verify_database(partial)
-        os.replace(partial, backup_path)
-    except (sqlite3.Error, OSError, BackupError) as error:
-        partial.unlink(missing_ok=True)
-        raise BackupError(f"Could not back up {database_file}: {error}") from error
+    copy_database(database_file, backup_path)
     get_logger(__name__).info("Database backup created: %s", backup_path)
     return backup_path
 
@@ -90,14 +99,6 @@ def restore_backup(backup_path: Path, database_file: Path, backup_dir: Path) -> 
     safety_backup = None
     if database_file.exists():
         safety_backup = create_backup(database_file, backup_dir, "pre-restore")
-    database_file.parent.mkdir(parents=True, exist_ok=True)
-    staged = database_file.with_name(database_file.name + ".restoring")
-    try:
-        _copy_database(backup_path, staged)
-        verify_database(staged)
-        os.replace(staged, database_file)
-    except (sqlite3.Error, OSError, BackupError) as error:
-        staged.unlink(missing_ok=True)
-        raise BackupError(f"Could not restore {backup_path}: {error}") from error
+    copy_database(backup_path, database_file)
     get_logger(__name__).info("Database restored from %s", backup_path)
     return safety_backup

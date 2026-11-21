@@ -39,8 +39,10 @@ class MainController:
         workspace_repository = WorkspaceRepository(paths.database_file)
         prompt_repository = PromptRepository(paths.database_file)
         self._event_bus = EventBus()
+        # Resolved on every use, so a saved "Default Project Folder" applies to
+        # the next project without restarting (audit finding C-02).
         self._project_service = ProjectService(
-            repository, paths.projects_dir, self._event_bus
+            repository, settings_service.get_projects_dir, self._event_bus
         )
         self._dashboard_service = DashboardService(
             dashboard_repository, self._project_service

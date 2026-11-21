@@ -7,8 +7,7 @@ Use Python 3.13 on Windows, create a virtual environment, and install runtime an
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-dev.txt
+python -m pip install -r requirements.txt -r requirements-dev.txt -c constraints.txt
 ```
 
 ## Branches and changes
@@ -22,10 +21,13 @@ Before opening a pull request, run:
 ```powershell
 python -m compileall app.py src tests
 python -m pytest -q
+python tests/ui/run_isolated.py
 git diff --check
 ```
 
-Add meaningful regression coverage for behavior changes. Do not skip or weaken tests to make a change pass. Manually exercise affected CustomTkinter workflows when automated UI coverage is unavailable.
+Add meaningful regression coverage for behavior changes.
+
+Schema changes are new numbered migrations in `src/database/schema.py` (`MIGRATIONS`): additive only, never edited after release, covered by `tests/test_migrations.py` against the historical fixtures in `tests/fixtures/db/`. Dependency versions are pinned; change them deliberately and run the full suite, including UI tests. Do not skip or weaken tests to make a change pass. Manually exercise affected CustomTkinter workflows when automated UI coverage is unavailable.
 
 ## Commits and pull requests
 

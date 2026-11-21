@@ -19,8 +19,7 @@ Python 3.13 and Windows 11 are the supported development environment.
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-dev.txt
+python -m pip install -r requirements.txt -r requirements-dev.txt -c constraints.txt
 python app.py
 ```
 
@@ -29,9 +28,31 @@ Run the automated checks with:
 ```powershell
 python -m compileall app.py src tests
 python -m pytest -q
+python tests/ui/run_isolated.py   # UI tests, one process each (needs a display)
 ```
 
-Runtime data is stored locally in SQLite. Generated databases, logs, exports, projects, caches, and virtual environments are excluded by `.gitignore`.
+## Where your data lives
+
+The database, settings, logs and automatic backups are stored per user, never in the application folder:
+
+| Platform | Data folder |
+|---|---|
+| Windows | `%APPDATA%\WonderCubs Studio` |
+| macOS | `~/Library/Application Support/WonderCubs Studio` |
+| Linux | `$XDG_DATA_HOME/wondercubs-studio` (default `~/.local/share/wondercubs-studio`) |
+
+Set `WONDERCUBS_DATA_DIR` to use another folder (for example a portable install). New projects are created in the **Default Project Folder** from Settings, which defaults to `Documents/WonderCubs Studio/Projects`.
+
+On first start, data from an older version's application folder is copied (never moved) into the data folder; see `legacy-import.json` there.
+
+Before every database upgrade a verified backup is written to `data/backups/`. To list or restore backups:
+
+```powershell
+python app.py --list-backups
+python app.py --restore-backup "<path to backup .db>"
+```
+
+Restoring first backs up the current database, so it can be undone.
 
 ## Architecture
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## M0.5 Stabilisation (unreleased)
+
+### Fixed
+
+- Workspace status changes could update the wrong project when titles were duplicated, and stopped syncing after a rename; workspaces now link to projects by id
+- Project creation is atomic across the project row, its workspace and its folder; failures leave nothing behind, and creation recovers when folders outlive their database rows
+- Opening a project folder crashed on macOS and Linux
+- The Default Project Folder setting was saved but ignored
+- Creating a project from the New Project dialog could show a spurious "Could not create project" error
+- Exports only displayed text; they now save files
+- Today's Goal could not be set
+
+### Added
+
+- Schema versioning, transactional migrations, verified pre-upgrade backups, and `--list-backups` / `--restore-backup`
+- Per-user data folder with a one-time, non-destructive import of older data
+- UI-level tests and CI on Windows, macOS and Linux
+
+### Changed
+
+- Dependencies pinned exactly (`customtkinter==5.2.2`); see `constraints.txt`
+- An unreadable settings file is kept aside and defaults are used
+
 ## v0.3.0 (In Development)
 
 ### Added

@@ -1,9 +1,11 @@
 """Project persistence layer."""
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
 from pathlib import Path
+import sqlite3
 
-from src.database.connection import create_connection
+from src.database.connection import create_connection, transaction
 from src.models.project import Project
 
 
@@ -18,7 +20,12 @@ class ProjectRepository:
     def __init__(self, database_file: Path) -> None:
         self._database_file = database_file
 
-    def add(self, project: Project) -> int:
+    def transaction(self) -> AbstractContextManager[sqlite3.Connection]:
+        """Open an atomic unit of work on the project database."""
+        return transaction(self._database_file)
+
+    def add(self, project: Project, connection: sqlite3.Connection | None = None) -> int:
+        """Insert a project; joins ``connection``'s transaction when given."""
         query = """
         INSERT INTO Projects
             (video_number, title, lesson, status, created_at, updated_at,
@@ -30,9 +37,11 @@ class ProjectRepository:
             project.created_at, project.updated_at, project.published_at,
             project.folder_path,
         )
-        with create_connection(self._database_file) as connection:
-            cursor = connection.execute(query, values)
-            connection.commit()
+        if connection is not None:
+            return int(connection.execute(query, values).lastrowid)
+        with create_connection(self._database_file) as own_connection:
+            cursor = own_connection.execute(query, values)
+            own_connection.commit()
             return int(cursor.lastrowid)
 
     def update_lifecycle(

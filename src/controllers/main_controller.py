@@ -1,6 +1,8 @@
 """Main application controller."""
 from __future__ import annotations
 
+import sqlite3
+
 from src.database.dashboard_repository import DashboardRepository
 from src.database.character_repository import CharacterRepository
 from src.database.project_repository import ProjectRepository
@@ -59,16 +61,27 @@ class MainController:
     def create_project(self, title: str, lesson: str, status: str = ProjectService.DEFAULT_STATUS) -> Project:
         """Create a project from UI input."""
         self._logger.info("Creating project: %s", title)
-        project = self._project_service.create_project(title, lesson, status)
-        self._workspace_service.create_workspace(
-            Workspace(
-                project_name=project.title,
-                lesson=project.lesson,
-                topic=project.title,
-                status=project.status,
-                project_id=project.id,
+        created_workspaces: list[Workspace] = []
+
+        def create_linked_workspace(connection: sqlite3.Connection, project: Project) -> None:
+            created_workspaces.append(
+                self._workspace_service.create_workspace(
+                    Workspace(
+                        project_name=project.title,
+                        lesson=project.lesson,
+                        topic=project.title,
+                        status=project.status,
+                        project_id=project.id,
+                    ),
+                    connection,
+                )
             )
+
+        # Project row, workspace row and project folder succeed or fail together.
+        project = self._project_service.create_project(
+            title, lesson, status, on_create=create_linked_workspace
         )
+        self._workspace_service.switch_workspace(created_workspaces[0].uuid)
         return project
 
     def get_next_project_number(self) -> str:

@@ -1,9 +1,14 @@
 """Project lifecycle business service."""
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 import re
+import shutil
+import sqlite3
+from uuid import uuid4
 
 from src.database.project_repository import ProjectRepository
 from src.models.project import Project, ProjectStatus
@@ -37,36 +42,45 @@ class ProjectService:
         "Analytics": {"notes.txt": "Analytics notes placeholder.\n"},
     }
 
+    STAGING_PREFIX = ".wcs-creating-"
+
     def __init__(
         self,
         repository: ProjectRepository,
-        projects_dir: Path,
+        projects_dir: Path | Callable[[], Path],
         event_bus: EventBus | None = None,
     ) -> None:
+        """``projects_dir`` is a folder, or a callable resolving it at use time
+        (so the saved "Default Project Folder" setting applies immediately)."""
         self._repository = repository
         self._projects_dir = projects_dir
         self._event_bus = event_bus or EventBus()
 
     def create_project(
-        self, title: str, lesson: str, status: str = DEFAULT_STATUS
+        self,
+        title: str,
+        lesson: str,
+        status: str = DEFAULT_STATUS,
+        on_create: Callable[[sqlite3.Connection, Project], None] | None = None,
     ) -> Project:
-        clean_number = self.get_next_project_number()
+        """Create the project row, its folder scaffold and any linked records
+        as one unit: either all of them exist afterwards or none do.
+
+        ``on_create(connection, project)`` runs inside the same database
+        transaction, for records that must be created with the project.
+        """
         clean_title = title.strip()
         clean_lesson = lesson.strip()
         clean_status = ProjectStatus.parse(status).value
+        projects_dir = self.get_projects_dir()
+        clean_number = self._next_free_number(projects_dir)
         self._validate_project_data(clean_number, clean_title, clean_lesson)
 
-        project_folder = self._projects_dir / (
-            f"{clean_number}_{self._slugify(clean_title)}"
-        )
+        project_folder = projects_dir / f"{clean_number}_{self._slugify(clean_title)}"
         if project_folder.exists():
             raise FileExistsError(f"Project folder already exists: {project_folder}")
 
         timestamp = self._now()
-        self._create_project_folders(project_folder)
-        self._write_project_readme(
-            project_folder, clean_title, clean_lesson, clean_status, timestamp
-        )
         published_at = (
             timestamp if clean_status == ProjectStatus.PUBLISHED.value else None
         )
@@ -81,13 +95,32 @@ class ProjectService:
             updated_at=timestamp,
             published_at=published_at,
         )
+
+        # Build the scaffold in a hidden staging folder first; it only becomes
+        # the real project folder once every database write has succeeded.
+        staging = projects_dir / f"{self.STAGING_PREFIX}{uuid4().hex}"
+        moved_into_place = False
         try:
-            project_id = self._repository.add(pending)
-        except Exception:
-            # Database remains authoritative. Folder cleanup is deliberately
-            # conservative so user-authored files are never removed.
+            self._create_project_folders(staging)
+            self._write_project_readme(
+                staging, clean_title, clean_lesson, clean_status, timestamp
+            )
+            with self._repository.transaction() as connection:
+                project_id = self._repository.add(pending, connection)
+                project = replace(pending, id=project_id)
+                if on_create is not None:
+                    on_create(connection, project)
+                if project_folder.exists():
+                    raise FileExistsError(f"Project folder already exists: {project_folder}")
+                staging.rename(project_folder)
+                moved_into_place = True
+            # Leaving the block committed the transaction.
+        except BaseException:
+            if moved_into_place and project_folder.exists() and not staging.exists():
+                # The commit itself failed after the folder was moved: undo it.
+                project_folder.rename(staging)
+            self._discard_staging(staging)
             raise
-        project = Project(**{**pending.__dict__, "id": project_id})
         self._publish_updated(project, "created")
         return project
 
@@ -130,13 +163,47 @@ class ProjectService:
         return self._repository.list_recent(limit)
 
     def get_next_project_number(self) -> str:
-        return self._repository.get_next_video_number()
+        return self._next_free_number(self.get_projects_dir(create=False))
+
+    def get_projects_dir(self, create: bool = True) -> Path:
+        """Resolve the folder new projects are created in."""
+        source = self._projects_dir
+        folder = Path(source() if callable(source) else source).expanduser()
+        if create:
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+            except OSError as error:
+                raise OSError(f"Project folder is not available: {folder} ({error})") from error
+            if not folder.is_dir():
+                raise NotADirectoryError(f"Project folder is not a folder: {folder}")
+        return folder
 
     def get_folder_preview(self, title: str) -> str:
-        return str(
-            self._projects_dir
-            / f"{self.get_next_project_number()}_{self._slugify(title.strip())}"
-        )
+        folder = self.get_projects_dir(create=False)
+        return str(folder / f"{self._next_free_number(folder)}_{self._slugify(title.strip())}")
+
+    def _next_free_number(self, projects_dir: Path) -> str:
+        """Next database number, skipped past numbers already used by a folder.
+
+        Folders can outlive their database rows (for example after restoring an
+        older backup). Reusing their number would collide with the folder, so
+        those numbers are skipped rather than failing every creation.
+        """
+        number = int(self._repository.get_next_video_number())
+        used: set[int] = set()
+        if projects_dir.is_dir():
+            for entry in projects_dir.iterdir():
+                prefix = entry.name.split("_", 1)[0]
+                if prefix.isdigit():
+                    used.add(int(prefix))
+        while number in used:
+            number += 1
+        return f"{number:03d}"
+
+    def _discard_staging(self, staging: Path) -> None:
+        """Remove a staging scaffold this service created moments ago."""
+        if staging.name.startswith(self.STAGING_PREFIX) and staging.is_dir():
+            shutil.rmtree(staging, ignore_errors=True)
 
     def list_projects(self) -> list[Project]:
         return self._repository.list_all()

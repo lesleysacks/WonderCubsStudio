@@ -27,25 +27,35 @@ class WorkspaceRepository:
         "status",
         "created_at",
         "updated_at",
+        "project_id",
     )
 
     def __init__(self, database_file: Path) -> None:
         self._database_file = database_file
         self._logger = get_logger(__name__)
 
-    def create(self, workspace: Workspace) -> Workspace:
-        """Insert a workspace and return the saved record."""
+    def create(
+        self, workspace: Workspace, connection: sqlite3.Connection | None = None
+    ) -> Workspace:
+        """Insert a workspace and return the saved record.
+
+        When ``connection`` is given the insert joins the caller's transaction
+        and the caller commits.
+        """
         query = """
         INSERT INTO Workspaces
             (uuid, project_name, lesson, topic, language, target_platform,
              resolution, aspect_ratio, duration, style, current_scene, status,
-             created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             created_at, updated_at, project_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         try:
-            with create_connection(self._database_file) as connection:
+            if connection is not None:
                 connection.execute(query, self._to_values(workspace))
-                connection.commit()
+            else:
+                with create_connection(self._database_file) as own_connection:
+                    own_connection.execute(query, self._to_values(workspace))
+                    own_connection.commit()
         except sqlite3.Error:
             self._logger.exception("Failed to create workspace %s", workspace.uuid)
             raise
@@ -54,7 +64,7 @@ class WorkspaceRepository:
         return workspace
 
     def update(self, workspace: Workspace) -> bool:
-        """Update a workspace by UUID."""
+        """Update a workspace by UUID. The project link is never changed here."""
         query = """
         UPDATE Workspaces
         SET project_name = ?,
@@ -72,7 +82,7 @@ class WorkspaceRepository:
             updated_at = ?
         WHERE uuid = ?
         """
-        values = self._to_values(workspace)[1:] + (workspace.uuid,)
+        values = self._to_values(workspace)[1:-1] + (workspace.uuid,)
         try:
             with create_connection(self._database_file) as connection:
                 cursor = connection.execute(query, values)
@@ -133,6 +143,22 @@ class WorkspaceRepository:
             raise
         return [self._from_row(row) for row in rows]
 
+    def get_by_project_id(self, project_id: int) -> Workspace | None:
+        """Return the workspace linked to a project, if any."""
+        query = f"""
+        SELECT {self._select_columns()}
+        FROM Workspaces
+        WHERE project_id = ?
+        LIMIT 1
+        """
+        try:
+            with create_connection(self._database_file) as connection:
+                row = connection.execute(query, (project_id,)).fetchone()
+        except sqlite3.Error:
+            self._logger.exception("Failed to load workspace for project %s", project_id)
+            raise
+        return self._from_row(row) if row else None
+
     def exists(self, workspace_uuid: str) -> bool:
         """Return True when a workspace UUID exists."""
         query = "SELECT 1 FROM Workspaces WHERE uuid = ? LIMIT 1"
@@ -149,11 +175,17 @@ class WorkspaceRepository:
         return ", ".join(cls._COLUMNS)
 
     @classmethod
-    def _to_values(cls, workspace: Workspace) -> tuple[str, ...]:
-        return tuple(str(getattr(workspace, column)) for column in cls._COLUMNS)
+    def _to_values(cls, workspace: Workspace) -> tuple[object, ...]:
+        values: list[object] = [
+            str(getattr(workspace, column)) for column in cls._COLUMNS[:-1]
+        ]
+        values.append(None if workspace.project_id is None else int(workspace.project_id))
+        return tuple(values)
 
     @staticmethod
     def _from_row(row: sqlite3.Row) -> Workspace:
         data = dict(row)
         data["duration"] = int(data["duration"])
+        if data.get("project_id") is not None:
+            data["project_id"] = int(data["project_id"])
         return Workspace(**data)

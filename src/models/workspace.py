@@ -28,3 +28,5 @@ class Workspace:
     status: str = "Draft"
     created_at: str = field(default_factory=_current_timestamp)
     updated_at: str = field(default_factory=_current_timestamp)
+    # Stable link to the owning project (None for stand-alone workspaces).
+    project_id: int | None = None

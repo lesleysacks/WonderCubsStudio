@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime
 import re
+import sqlite3
 from typing import Any
 
 from src.database.workspace_repository import WorkspaceRepository
@@ -30,13 +31,21 @@ class WorkspaceService:
         self._current_workspace_uuid: str | None = None
         self._logger = get_logger(__name__)
 
-    def create_workspace(self, workspace: Workspace) -> Workspace:
-        """Validate and save a new workspace."""
+    def create_workspace(
+        self, workspace: Workspace, connection: sqlite3.Connection | None = None
+    ) -> Workspace:
+        """Validate and save a new workspace.
+
+        Inside a caller's transaction (``connection`` given) the workspace is
+        not activated, because the transaction may still roll back; the caller
+        activates it with ``switch_workspace`` after committing.
+        """
         clean_workspace = self._prepare_workspace(workspace)
         self.validate_workspace(clean_workspace)
-        created = self._repository.create(clean_workspace)
-        self._current_workspace_uuid = created.uuid
-        self._logger.info("Workspace created and activated: %s", created.uuid)
+        created = self._repository.create(clean_workspace, connection)
+        if connection is None:
+            self._current_workspace_uuid = created.uuid
+            self._logger.info("Workspace created and activated: %s", created.uuid)
         return created
 
     def load_workspace(self, workspace_uuid: str | None = None) -> Workspace:
@@ -67,6 +76,7 @@ class WorkspaceService:
                 workspace,
                 created_at=existing_workspace.created_at,
                 updated_at=self._current_timestamp(),
+                project_id=existing_workspace.project_id,
             )
         )
         self.validate_workspace(clean_workspace)
@@ -154,6 +164,10 @@ class WorkspaceService:
     def list_workspaces(self) -> list[Workspace]:
         """Return all persisted workspaces."""
         return self._repository.get_all()
+
+    def get_workspace_for_project(self, project_id: int) -> Workspace | None:
+        """Return the workspace linked to ``project_id``, if any."""
+        return self._repository.get_by_project_id(project_id)
 
     def workspace_exists(self, workspace_uuid: str) -> bool:
         """Return True when a workspace exists."""

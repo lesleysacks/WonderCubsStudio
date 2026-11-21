@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from src.models.project import ProjectStatus
 from src.models.workspace import Workspace
 from src.services.workspace_service import WorkspaceService
 from src.utils.logger import get_logger
@@ -16,9 +17,18 @@ class WorkspaceController:
         self,
         service: WorkspaceService,
         project_status_saver: Callable[[str, str], object] | None = None,
+        project_link_saver: Callable[[int, str], object] | None = None,
     ) -> None:
+        """Create the controller.
+
+        ``project_link_saver(project_id, status)`` keeps a linked project's
+        lifecycle in step with its workspace. ``project_status_saver(name,
+        status)`` is a legacy hook kept for compatibility; the application does
+        not wire it, because names are not unique (audit finding D-01).
+        """
         self._service = service
         self._project_status_saver = project_status_saver
+        self._project_link_saver = project_link_saver
         self._logger = get_logger(__name__)
 
     def on_new_workspace(self) -> Workspace:
@@ -32,8 +42,15 @@ class WorkspaceController:
 
     def on_save_workspace(self, workspace: Workspace) -> Workspace:
         """Create or update a workspace through the service."""
+        linked = workspace.project_id is not None and self._project_link_saver is not None
+        if linked:
+            # Reject an invalid lifecycle value before anything is written, so a
+            # linked workspace and its project cannot drift apart.
+            ProjectStatus.parse(workspace.status)
         saved_workspace = self._service.save_workspace(workspace)
-        if self._project_status_saver is not None:
+        if linked and saved_workspace.project_id is not None:
+            self._project_link_saver(saved_workspace.project_id, saved_workspace.status)
+        elif self._project_status_saver is not None:
             self._project_status_saver(
                 saved_workspace.project_name,
                 saved_workspace.status,

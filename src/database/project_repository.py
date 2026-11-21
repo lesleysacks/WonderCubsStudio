@@ -58,15 +58,6 @@ class ProjectRepository:
             ).fetchone()
         return Project(**dict(row)) if row else None
 
-    def get_by_title(self, title: str) -> Project | None:
-        with create_connection(self._database_file) as connection:
-            row = connection.execute(
-                f"SELECT {self.COLUMNS} FROM Projects "
-                "WHERE title = ? ORDER BY id DESC LIMIT 1",
-                (title,),
-            ).fetchone()
-        return Project(**dict(row)) if row else None
-
     def list_all(self) -> list[Project]:
         with create_connection(self._database_file) as connection:
             rows = connection.execute(

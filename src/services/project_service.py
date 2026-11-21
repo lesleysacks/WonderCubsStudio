@@ -113,13 +113,6 @@ class ProjectService:
         self._publish_updated(saved, "status_changed")
         return saved
 
-    def change_status_by_title(self, title: str, status: str) -> Project | None:
-        """Update the project linked to an existing workspace, when present."""
-        project = self._repository.get_by_title(title.strip())
-        if project is None:
-            return None
-        return self.change_status(int(project.id), status)
-
     def get_dashboard_statistics(self) -> dict[str, int]:
         """Calculate lifecycle totals from current persisted records."""
         projects = self.list_projects()

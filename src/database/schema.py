@@ -168,8 +168,96 @@ def _upgrade_projects_schema(connection: sqlite3.Connection) -> None:
     )
 
 
+def _migration_002_link_workspaces_to_projects(connection: sqlite3.Connection) -> dict[str, object]:
+    """Add ``Workspaces.project_id`` and link existing rows only where certain.
+
+    Before this migration a workspace found "its" project by title, which is
+    neither unique nor stable (audit D-01/D-02). Links are inferred only from
+    unambiguous evidence; anything else is left unlinked and listed in the
+    migration report. No existing value is changed.
+    """
+    columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(Workspaces)")}
+    if "project_id" not in columns:
+        connection.execute(
+            "ALTER TABLE Workspaces ADD COLUMN project_id INTEGER REFERENCES Projects(id)"
+        )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_project_id "
+        "ON Workspaces (project_id) WHERE project_id IS NOT NULL"
+    )
+
+    projects = [
+        (int(row[0]), str(row[1]).strip(), str(row[2] or ""), str(row[3]).strip())
+        for row in connection.execute(
+            "SELECT id, title, created_at, lesson FROM Projects ORDER BY id"
+        )
+    ]
+    workspaces = [
+        (str(row[0]), str(row[1]).strip(), str(row[2] or ""), str(row[3]).strip())
+        for row in connection.execute(
+            "SELECT uuid, project_name, created_at, lesson FROM Workspaces "
+            "WHERE project_id IS NULL ORDER BY created_at, uuid"
+        )
+    ]
+    taken = {
+        int(row[0])
+        for row in connection.execute(
+            "SELECT project_id FROM Workspaces WHERE project_id IS NOT NULL"
+        )
+    }
+    links: dict[str, tuple[int, str]] = {}
+
+    def free(project_id: int) -> bool:
+        return project_id not in taken and all(pid != project_id for pid, _ in links.values())
+
+    # Pass 1: exactly one project and one workspace share the title.
+    for uuid, name, _created, _lesson in workspaces:
+        same_title = [p for p in projects if p[1] == name]
+        same_name_workspaces = [w for w in workspaces if w[1] == name]
+        if len(same_title) == 1 and len(same_name_workspaces) == 1 and free(same_title[0][0]):
+            links[uuid] = (same_title[0][0], "unique title")
+
+    # Pass 2: v0.3 created project and workspace together, in the same second,
+    # copying the lesson. A unique (created_at, lesson) match is conclusive even
+    # when titles are duplicated or the workspace was renamed afterwards.
+    for uuid, _name, created, lesson in workspaces:
+        if uuid in links or not created:
+            continue
+        matches = [p for p in projects if p[2] == created and p[3] == lesson and free(p[0])]
+        rivals = [w for w in workspaces if w[0] not in links and w[2] == created and w[3] == lesson]
+        if len(matches) == 1 and len(rivals) == 1:
+            links[uuid] = (matches[0][0], "created with project")
+
+    for uuid, (project_id, _reason) in links.items():
+        connection.execute(
+            "UPDATE Workspaces SET project_id = ? WHERE uuid = ?", (project_id, uuid)
+        )
+
+    unlinked = []
+    for uuid, name, _created, _lesson in workspaces:
+        if uuid in links:
+            continue
+        candidates = [p for p in projects if p[1] == name]
+        reason = (
+            "no project has this title"
+            if not candidates
+            else f"ambiguous: {len(candidates)} projects share this title"
+            if len(candidates) > 1
+            else "title matches a project that already has a workspace"
+        )
+        unlinked.append({"uuid": uuid, "project_name": name, "reason": reason})
+    return {
+        "linked": [
+            {"uuid": uuid, "project_id": pid, "evidence": reason}
+            for uuid, (pid, reason) in sorted(links.items())
+        ],
+        "unlinked_workspaces": unlinked,
+    }
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline_v0_3_schema", _migration_001_baseline),
+    Migration(2, "link_workspaces_to_projects", _migration_002_link_workspaces_to_projects),
 )
 
 

@@ -50,7 +50,8 @@ class MainController:
         )
         self._character_controller = CharacterController(self._character_service)
         self._workspace_controller = WorkspaceController(
-            self._workspace_service, self._project_service.change_status_by_title
+            self._workspace_service,
+            project_link_saver=self._project_service.change_status,
         )
         self._prompt_controller = PromptController(self._prompt_service)
         self._explorer_service = ExplorerService()
@@ -65,6 +66,7 @@ class MainController:
                 lesson=project.lesson,
                 topic=project.title,
                 status=project.status,
+                project_id=project.id,
             )
         )
         return project

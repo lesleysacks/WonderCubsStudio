@@ -60,6 +60,29 @@ class DashboardService:
             self._logger.exception("Error loading latest project")
             raise
 
+    MAX_GOAL_LENGTH = 200
+
+    def set_todays_goal(self, description: str) -> DailyGoal:
+        """Set (or change the text of) today's production goal."""
+        clean = " ".join(description.split())
+        if not clean:
+            raise ValueError("Goal cannot be empty.")
+        if len(clean) > self.MAX_GOAL_LENGTH:
+            raise ValueError(f"Goal cannot exceed {self.MAX_GOAL_LENGTH} characters.")
+        goal = self._repository.save_goal(date.today().isoformat(), clean)
+        self._logger.info("Goal saved for %s", goal.goal_date)
+        return goal
+
+    def set_todays_goal_completed(self, completed: bool) -> DailyGoal:
+        """Mark today's goal complete or incomplete."""
+        goal = self.get_todays_goal()
+        if goal is None or goal.id is None:
+            raise LookupError("No goal is set for today.")
+        self._repository.set_goal_completed(goal.id, completed)
+        updated = self.get_todays_goal()
+        assert updated is not None
+        return updated
+
     def get_todays_goal(self) -> DailyGoal | None:
         """Load today's production goal."""
         try:

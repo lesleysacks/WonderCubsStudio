@@ -12,5 +12,5 @@ class PromptToolbar(ctk.CTkFrame):
                  on_duplicate: Callable[[], None], on_preview: Callable[[], None], on_export: Callable[[], None]) -> None:
         super().__init__(parent, fg_color="#111827", corner_radius=0)
         for label, command in (("New", on_new), ("Save New Version", on_save), ("Duplicate", on_duplicate),
-                               ("Preview", on_preview), ("Export", on_export)):
+                               ("Preview", on_preview), ("Export…", on_export)):
             ctk.CTkButton(self, text=label, command=command, width=125).pack(side="left", padx=7, pady=10)

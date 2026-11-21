@@ -70,6 +70,44 @@ class DashboardRepository:
             raise
         return Project(**dict(row)) if row else None
 
+    def save_goal(self, goal_date: str, description: str) -> DailyGoal:
+        """Set the goal for a date: update the current goal's text, or add one."""
+        try:
+            with create_connection(self._database_file) as connection:
+                row = connection.execute(
+                    "SELECT id FROM Goals WHERE goal_date = ? ORDER BY id DESC LIMIT 1",
+                    (goal_date,),
+                ).fetchone()
+                if row is None:
+                    connection.execute(
+                        "INSERT INTO Goals (goal_date, description, is_completed) VALUES (?, ?, 0)",
+                        (goal_date, description),
+                    )
+                else:
+                    connection.execute(
+                        "UPDATE Goals SET description = ? WHERE id = ?", (description, row["id"])
+                    )
+                connection.commit()
+        except sqlite3.Error:
+            self._logger.exception("Failed to save goal for %s", goal_date)
+            raise
+        goal = self.get_goal_for_date(goal_date)
+        assert goal is not None
+        return goal
+
+    def set_goal_completed(self, goal_id: int, completed: bool) -> bool:
+        """Mark a goal complete or incomplete."""
+        try:
+            with create_connection(self._database_file) as connection:
+                cursor = connection.execute(
+                    "UPDATE Goals SET is_completed = ? WHERE id = ?", (int(completed), goal_id)
+                )
+                connection.commit()
+                return cursor.rowcount == 1
+        except sqlite3.Error:
+            self._logger.exception("Failed to update goal %s", goal_id)
+            raise
+
     def get_goal_for_date(self, goal_date: str) -> DailyGoal | None:
         """Return the production goal for a date."""
         query = """

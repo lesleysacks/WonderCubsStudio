@@ -1,6 +1,7 @@
 """Prompt Library workspace."""
 from __future__ import annotations
 
+import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 from typing import Any
 
@@ -8,6 +9,7 @@ import customtkinter as ctk
 
 from src.controllers.prompt_controller import PromptController
 from src.models.prompt import Prompt
+from src.services.export_service import suggested_file_name
 from src.services.prompt_service import PromptNotFoundError, PromptValidationError
 from src.ui.prompt.prompt_toolbar import PromptToolbar
 
@@ -128,18 +130,30 @@ class PromptWindow(ctk.CTkFrame):
         if self._selected and messagebox.askyesno("Delete Prompt", f"Delete all versions of {self._selected.name}?"):
             self._controller.on_delete_prompt(self._selected.id); self._selected = None; self._new(); self.refresh()
 
+    EXPORT_EXTENSIONS = {"json": ("json", "JSON files"), "txt": ("txt", "Text files"),
+                         "markdown": ("md", "Markdown files")}
+
     def _export(self) -> None:
-        if self._selected:
-            try:
-                export_format = self._export_format.get()
-                messagebox.showinfo(
-                    f"Prompt Export ({export_format.upper()})",
-                    self._controller.on_export_prompt(
-                        self._selected.id, export_format,
-                        character_uuid=self._character_uuid.get().strip() or None,
-                    ),
-                )
-            except (PromptValidationError, LookupError) as error: messagebox.showerror("Prompt Error", str(error))
+        if not self._selected:
+            return
+        export_format = self._export_format.get()
+        extension, label = self.EXPORT_EXTENSIONS.get(export_format, ("txt", "Text files"))
+        file_path = filedialog.asksaveasfilename(
+            title=f"Export prompt as {export_format.upper()}",
+            defaultextension=f".{extension}",
+            initialfile=suggested_file_name(self._selected.name, extension, "prompt"),
+            filetypes=((label, f"*.{extension}"), ("All files", "*.*")),
+        )
+        if not file_path:
+            return
+        try:
+            written = self._controller.on_export_prompt_to_file(
+                self._selected.id, export_format, file_path,
+                character_uuid=self._character_uuid.get().strip() or None,
+            )
+            messagebox.showinfo(f"Prompt Export ({export_format.upper()})", f"Prompt exported to:\n{written}")
+        except (PromptValidationError, LookupError, OSError) as error:
+            messagebox.showerror("Prompt Error", str(error))
 
     def _search_changed(self) -> None:
         self._prompts = self._controller.on_search_changed(self._search.get()); self._render_list()

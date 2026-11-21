@@ -11,7 +11,7 @@ from src.database.prompt_repository import PromptRepository
 from src.controllers.character_controller import CharacterController
 from src.controllers.workspace_controller import WorkspaceController
 from src.controllers.prompt_controller import PromptController
-from src.models.dashboard import DashboardData
+from src.models.dashboard import DailyGoal, DashboardData
 from src.models.project import Project
 from src.models.settings import AppSettings
 from src.models.workspace import Workspace
@@ -116,6 +116,14 @@ class MainController:
     def load_dashboard(self) -> DashboardData:
         """Return dashboard data for the home screen."""
         return self._dashboard_service.get_dashboard_data()
+
+    def set_todays_goal(self, description: str) -> DailyGoal:
+        """Set today's goal from UI input."""
+        return self._dashboard_service.set_todays_goal(description)
+
+    def set_todays_goal_completed(self, completed: bool) -> DailyGoal:
+        """Mark today's goal complete or incomplete."""
+        return self._dashboard_service.set_todays_goal_completed(completed)
 
     def load_settings(self) -> AppSettings:
         """Load application settings."""

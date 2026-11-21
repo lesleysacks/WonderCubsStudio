@@ -3,11 +3,14 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
+import json
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from src.models.character import Character
 from src.services.character_service import CharacterService
+from src.services.export_service import write_text_file
 from src.utils.logger import get_logger
 
 
@@ -50,6 +53,11 @@ class CharacterController:
     def on_export_character(self, character_uuid: str) -> dict[str, Any]:
         """Export a character through the service."""
         return self._service.export_json(character_uuid)
+
+    def on_export_character_to_file(self, character_uuid: str, file_path: str | Path) -> Path:
+        """Write the character's JSON export to ``file_path``."""
+        payload = self._service.export_json(character_uuid)
+        return write_text_file(file_path, json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
 
     def on_search_changed(self, search_text: str) -> list[Character]:
         """Return filtered characters while the user types."""

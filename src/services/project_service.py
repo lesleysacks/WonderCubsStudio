@@ -146,19 +146,6 @@ class ProjectService:
         self._publish_updated(saved, "status_changed")
         return saved
 
-    def get_dashboard_statistics(self) -> dict[str, int]:
-        """Calculate lifecycle totals from current persisted records."""
-        projects = self.list_projects()
-        counts = {status: 0 for status in self.VALID_STATUSES}
-        for project in projects:
-            status = project.status if project.status in counts else self.DEFAULT_STATUS
-            counts[status] += 1
-        counts["Total Projects"] = len(projects)
-        counts["Active Production Count"] = sum(
-            counts[status] for status in self.ACTIVE_STATUSES
-        )
-        return counts
-
     def get_recent_activity(self, limit: int = 10) -> list[Project]:
         return self._repository.list_recent(limit)
 

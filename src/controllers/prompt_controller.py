@@ -1,9 +1,11 @@
 """Controller for Prompt Engine UI actions."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Mapping
 
 from src.models.prompt import Prompt
+from src.services.export_service import write_text_file
 from src.services.prompt_service import PromptService
 
 
@@ -38,6 +40,13 @@ class PromptController:
     def on_export_prompt(self, prompt_id: str, export_format: str, values: Mapping[str, object] | None = None,
                          workspace_uuid: str | None = None, character_uuid: str | None = None) -> str:
         return self._service.export_prompt(prompt_id, export_format, values, workspace_uuid, character_uuid)
+
+    def on_export_prompt_to_file(self, prompt_id: str, export_format: str, file_path: str | Path,
+                                 values: Mapping[str, object] | None = None,
+                                 workspace_uuid: str | None = None, character_uuid: str | None = None) -> Path:
+        """Render the export and write it to ``file_path``."""
+        content = self._service.export_prompt(prompt_id, export_format, values, workspace_uuid, character_uuid)
+        return write_text_file(file_path, content if content.endswith("\n") else content + "\n")
 
     def load_prompts(self) -> list[Prompt]:
         return self._service.get_all_prompts()

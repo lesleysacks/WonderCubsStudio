@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import json
+from pathlib import Path
 from typing import Any
 
 from src.models.project import ProjectStatus
 from src.models.workspace import Workspace
+from src.services.export_service import write_text_file
 from src.services.workspace_service import WorkspaceService
 from src.utils.logger import get_logger
 
@@ -77,6 +80,11 @@ class WorkspaceController:
     def on_export_context(self, workspace_uuid: str | None = None) -> dict[str, Any]:
         """Export workspace context through the service."""
         return self._service.export_context(workspace_uuid)
+
+    def on_export_context_to_file(self, workspace_uuid: str, file_path: str | Path) -> Path:
+        """Write the workspace context JSON to ``file_path``."""
+        payload = self._service.export_context(workspace_uuid)
+        return write_text_file(file_path, json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
 
     def load_workspaces(self) -> list[Workspace]:
         """Return all workspaces for initial workspace loading."""

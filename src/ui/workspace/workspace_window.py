@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import json
+import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 
 import customtkinter as ctk
@@ -10,6 +10,7 @@ import customtkinter as ctk
 from src.controllers.workspace_controller import WorkspaceController
 from src.models.workspace import Workspace
 from src.models.project import ProjectStatus
+from src.services.export_service import suggested_file_name
 
 
 class WorkspaceWindow(ctk.CTkFrame):
@@ -58,7 +59,7 @@ class WorkspaceWindow(ctk.CTkFrame):
             ("New", self._new_workspace),
             ("Save", self._save_workspace),
             ("Switch", self._switch_workspace),
-            ("Export", self._export_context),
+            ("Export…", self._export_context),
             ("Delete", self._delete_workspace),
             ("Refresh", self.refresh),
         )
@@ -217,9 +218,17 @@ class WorkspaceWindow(ctk.CTkFrame):
         if self._selected_workspace is None:
             messagebox.showinfo("Export Context", "Select a workspace to export.")
             return
+        file_path = filedialog.asksaveasfilename(
+            title="Export workspace context as JSON",
+            defaultextension=".json",
+            initialfile=suggested_file_name(self._selected_workspace.project_name, "json", "workspace"),
+            filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+        )
+        if not file_path:
+            return
         try:
-            payload = self._controller.on_export_context(self._selected_workspace.uuid)
-            messagebox.showinfo("Workspace Context JSON", json.dumps(payload, indent=2))
+            written = self._controller.on_export_context_to_file(self._selected_workspace.uuid, file_path)
+            messagebox.showinfo("Export Context", f"Workspace context exported to:\n{written}")
         except Exception as error:
             self._show_error("Could not export context", error)
 

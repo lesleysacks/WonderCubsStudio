@@ -24,7 +24,7 @@ class CharacterToolbar(ctk.CTkFrame):
             ("New Character", on_new),
             ("Save", on_save),
             ("Duplicate", on_duplicate),
-            ("Export JSON", on_export),
+            ("Export JSON…", on_export),
             ("Refresh", on_refresh),
         )
         for column, (label, command) in enumerate(actions):

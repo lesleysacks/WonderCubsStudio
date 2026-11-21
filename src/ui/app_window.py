@@ -158,12 +158,44 @@ class WonderCubsApp(ctk.CTk):
         panel = self._card(parent)
         panel.grid(row=2, column=1, columnspan=3, sticky="nsew", padx=10, pady=10)
         ctk.CTkLabel(panel, text="Today's Goal", font=("Segoe UI", 20, "bold"), anchor="w").pack(anchor="w", padx=20, pady=(18, 10))
-        if dashboard.todays_goal is None:
+        goal = dashboard.todays_goal
+        if goal is None:
             text = "No goal set for today."
         else:
-            checkbox = "☑" if dashboard.todays_goal.is_completed else "□"
-            text = f"{checkbox} {dashboard.todays_goal.description}"
-        ctk.CTkLabel(panel, text=text, text_color="#dbeafe", font=("Segoe UI", 16), anchor="w").pack(anchor="w", padx=20, pady=(0, 20))
+            checkbox = "☑" if goal.is_completed else "□"
+            text = f"{checkbox} {goal.description}"
+        ctk.CTkLabel(panel, text=text, text_color="#dbeafe", font=("Segoe UI", 16), anchor="w", wraplength=560, justify="left").pack(anchor="w", padx=20, pady=(0, 10))
+        actions = ctk.CTkFrame(panel, fg_color="transparent")
+        actions.pack(anchor="w", padx=20, pady=(0, 18))
+        ctk.CTkButton(actions, text="Set Goal…" if goal is None else "Edit Goal…", width=120, command=self._edit_goal).pack(side="left", padx=(0, 8))
+        if goal is not None:
+            ctk.CTkButton(
+                actions,
+                text="Mark Incomplete" if goal.is_completed else "Mark Complete",
+                width=140,
+                command=lambda: self._set_goal_completed(not goal.is_completed),
+            ).pack(side="left")
+
+    def _edit_goal(self, description: str | None = None) -> None:
+        if description is None:
+            dialog = ctk.CTkInputDialog(title="Today's Goal", text="What is today's production goal?")
+            description = dialog.get_input()
+            if description is None:
+                return
+        try:
+            self._controller.set_todays_goal(description)
+        except Exception as error:
+            self.show_error("Could not save goal", error)
+            return
+        self._show_dashboard()
+
+    def _set_goal_completed(self, completed: bool) -> None:
+        try:
+            self._controller.set_todays_goal_completed(completed)
+        except Exception as error:
+            self.show_error("Could not update goal", error)
+            return
+        self._show_dashboard()
 
     def _build_latest_project_panel(self, parent: ctk.CTkFrame, dashboard: DashboardData) -> None:
         panel = self._card(parent)
@@ -301,9 +333,6 @@ class WonderCubsApp(ctk.CTk):
 
     def _open_project_picker(self) -> None:
         ProjectListWindow(self, self._controller, mode="open")
-
-    def _open_video_queue(self) -> None:
-        ProjectListWindow(self, self._controller, mode="queue")
 
     def _open_settings(self) -> None:
         SettingsWindow(self, self._controller)

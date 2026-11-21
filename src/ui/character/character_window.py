@@ -1,7 +1,6 @@
 """Character Workspace frame."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
@@ -11,6 +10,7 @@ import customtkinter as ctk
 from src.controllers.character_controller import CharacterController
 from src.models.character import Character
 from src.services.character_service import CharacterNotFoundError, CharacterValidationError
+from src.services.export_service import suggested_file_name
 from src.ui.character.character_details_panel import CharacterDetailsPanel
 from src.ui.character.character_list_panel import CharacterListPanel
 from src.ui.character.character_preview_panel import CharacterPreviewPanel
@@ -138,9 +138,17 @@ class CharacterWindow(ctk.CTkFrame):
         if self._selected_character is None:
             messagebox.showinfo("Export JSON", "Select a character to export.")
             return
+        file_path = filedialog.asksaveasfilename(
+            title="Export character as JSON",
+            defaultextension=".json",
+            initialfile=suggested_file_name(self._selected_character.name, "json", "character"),
+            filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+        )
+        if not file_path:
+            return
         try:
-            payload = self._controller.on_export_character(self._selected_character.uuid)
-            messagebox.showinfo("Export JSON", json.dumps(payload, indent=2))
+            written = self._controller.on_export_character_to_file(self._selected_character.uuid, file_path)
+            messagebox.showinfo("Export JSON", f"Character exported to:\n{written}")
         except (CharacterValidationError, CharacterNotFoundError) as error:
             messagebox.showerror("Character Error", str(error))
         except Exception as error:

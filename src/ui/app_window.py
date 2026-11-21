@@ -30,6 +30,7 @@ class WonderCubsApp(ctk.CTk):
         self._content_frame: ctk.CTkFrame | None = None
         self._nav_buttons: dict[str, ctk.CTkButton] = {}
         self._active_nav = "Dashboard"
+        self._pending_refresh: str | None = None
         self.title("WonderCubs Studio v0.3")
         self.geometry("1120x720")
         self.minsize(940, 620)
@@ -88,6 +89,11 @@ class WonderCubsApp(ctk.CTk):
     def _clear_content(self) -> ctk.CTkFrame:
         if self._content_frame is None:
             raise RuntimeError("Application content frame has not been initialized.")
+        # Any queued dashboard refresh is superseded by the screen being built
+        # now. Left queued, it could run while that screen is half-built
+        # (CustomTkinter processes idle tasks during construction) and destroy
+        # its widgets, which surfaced as a spurious "Could not create project".
+        self._cancel_pending_refresh()
         for widget in self._content_frame.winfo_children():
             widget.destroy()
         return self._content_frame
@@ -281,10 +287,24 @@ class WonderCubsApp(ctk.CTk):
             ).pack(anchor="w", padx=20, pady=3)
 
     def _on_project_updated(self, _payload: dict[str, object]) -> None:
+        if self._active_nav == "Dashboard" and self._pending_refresh is None:
+            self._pending_refresh = self.after_idle(self._run_pending_refresh)
+
+    def _run_pending_refresh(self) -> None:
+        self._pending_refresh = None
         if self._active_nav == "Dashboard":
-            self.after_idle(self._show_dashboard)
+            self._show_dashboard()
+
+    def _cancel_pending_refresh(self) -> None:
+        if self._pending_refresh is not None:
+            try:
+                self.after_cancel(self._pending_refresh)
+            except tk.TclError:
+                pass
+            self._pending_refresh = None
 
     def _close_application(self) -> None:
+        self._cancel_pending_refresh()
         self._controller.unsubscribe("project_updated", self._on_project_updated)
         self.destroy()
 

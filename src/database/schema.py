@@ -1,10 +1,10 @@
-"""Database schema creation."""
+"""Database schema definition and upgrade entry point."""
 from __future__ import annotations
 
 from pathlib import Path
 import sqlite3
 
-from src.database.connection import create_connection
+from src.database.migrations import Migration, MigrationResult, migrate
 
 CREATE_PROJECTS_TABLE = """
 CREATE TABLE IF NOT EXISTS Projects (
@@ -111,28 +111,33 @@ ON Prompts (id) WHERE active = 1;
 """
 
 
-def initialize_database(database_file: Path) -> None:
-    """Create the application database and required tables."""
-    database_file.parent.mkdir(parents=True, exist_ok=True)
-    with create_connection(database_file) as connection:
-        connection.execute(CREATE_PROJECTS_TABLE)
-        connection.execute(CREATE_GOALS_TABLE)
-        connection.execute(CREATE_GOALS_DATE_INDEX)
-        connection.execute(CREATE_CHARACTERS_TABLE)
-        connection.execute(CREATE_CHARACTERS_NAME_INDEX)
-        connection.execute(CREATE_WORKSPACES_TABLE)
-        connection.execute(CREATE_WORKSPACES_PROJECT_NAME_INDEX)
-        connection.execute(CREATE_PROMPTS_TABLE)
-        connection.execute(CREATE_PROMPTS_NAME_INDEX)
-        connection.execute(CREATE_PROMPTS_ACTIVE_VERSION_INDEX)
-        _upgrade_projects_schema(connection)
-        connection.commit()
+def _migration_001_baseline(connection: sqlite3.Connection) -> dict[str, object]:
+    """Bring any pre-versioning database (v0.1 to v0.3) to the v0.3 schema.
+
+    Every statement is idempotent, so this is safe for databases that already
+    have some or all tables.
+    """
+    for statement in (
+        CREATE_PROJECTS_TABLE,
+        CREATE_GOALS_TABLE,
+        CREATE_GOALS_DATE_INDEX,
+        CREATE_CHARACTERS_TABLE,
+        CREATE_CHARACTERS_NAME_INDEX,
+        CREATE_WORKSPACES_TABLE,
+        CREATE_WORKSPACES_PROJECT_NAME_INDEX,
+        CREATE_PROMPTS_TABLE,
+        CREATE_PROMPTS_NAME_INDEX,
+        CREATE_PROMPTS_ACTIVE_VERSION_INDEX,
+    ):
+        connection.execute(statement)
+    _upgrade_projects_schema(connection)
+    return {}
 
 
 def _upgrade_projects_schema(connection: sqlite3.Connection) -> None:
     """Idempotently add lifecycle fields while preserving existing rows."""
     columns = {
-        str(row["name"])
+        str(row[1])
         for row in connection.execute("PRAGMA table_info(Projects)").fetchall()
     }
     if "status" not in columns:
@@ -161,3 +166,19 @@ def _upgrade_projects_schema(connection: sqlite3.Connection) -> None:
         WHERE updated_at IS NULL OR updated_at = ''
         """
     )
+
+
+MIGRATIONS: tuple[Migration, ...] = (
+    Migration(1, "baseline_v0_3_schema", _migration_001_baseline),
+)
+
+
+def backup_dir_for(database_file: Path) -> Path:
+    """Default location for automatic backups of ``database_file``."""
+    return database_file.parent / "backups"
+
+
+def initialize_database(database_file: Path, app_version: str = "unknown") -> MigrationResult:
+    """Create the application database or upgrade it to the latest schema."""
+    database_file.parent.mkdir(parents=True, exist_ok=True)
+    return migrate(database_file, backup_dir_for(database_file), app_version)

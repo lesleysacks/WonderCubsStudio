@@ -58,13 +58,18 @@ jobs:
       - name: Compile Python sources and tests
         run: python -m compileall -q app.py src tests
 
-      - name: Run complete test suite (Linux, virtual display)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a python -m pytest -q -rs
+      - name: Run non-UI test suite
+        run: python -m pytest -q -rs --ignore=tests/ui
 
-      - name: Run complete test suite
+      # One process per UI test: Windows Tcl cannot create many interpreters
+      # in a single process (see tests/ui/run_isolated.py).
+      - name: Run UI tests (Linux, virtual display)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a python tests/ui/run_isolated.py
+
+      - name: Run UI tests
         if: runner.os != 'Linux'
-        run: python -m pytest -q -rs
+        run: python tests/ui/run_isolated.py
 
   dependency-audit:
     name: Dependency vulnerability audit
